@@ -1,0 +1,409 @@
+#
+#
+#  performance.R
+#
+#  Functions used to analyze the performance of portfolios.
+#
+#
+#  LIST OF FUNCTIONS:
+#  ------------------
+#
+#  .perfstats    Generates performance stats from equity curves
+#  .xtsdrawdowns Multiple drawdowns
+#  .xtsmdd       Efficiently computes the maximum drawdown from returns
+#  .xtsCAGR      Efficiently computes the CAGR from an xts of returns
+#  .plot_performance     Various complex plots to summarize EC performance
+#
+#
+###################################################################################
+#
+#   Portfolio Performance Functions
+#
+###################################################################################
+
+#----------------------------------------------------------------------------------
+#  FUNCTION perfstats
+#
+#' Compute performance statistics on equity curves
+#'
+#' Returns a dataframe containing performance stats on one or multiple
+#' equity curves.  May also plot it on the graphic device.
+#'
+#' @param data     An xts matrix of equity curves, each column being one equity curve.
+#' @param on       The periodicity (scale) of the xts data matrix to compute the stats.
+#'                 "days", "weeks", "months", "quarters" and "years" are valid
+#'                 and correspond to the following scales for table.AnnualizedReturns
+#'                 respectively:  252, 52.18, 12, 4 or 1.
+#' @param plotout  Logical.  Indicates whether to plot the result on the graphic console.
+#'                 using function plot_df.  Default is TRUE.
+#' @param value    Logical (default TRUE) to indicate whether a dataframe is returned
+#' @param percent  Logical to indicate whether to multiple by 100 to get percentages
+#'                 (default TRUE).
+#' @param digits   Number of digits to show on the screen / file and returned dataframe.
+#' @param top      The number of drawdowns to calculate, starting from the maximum drawdown.
+#'
+#' @param main     The title of the table to plot on the graphic console.  Default is
+#'                 "Performance Summary".
+#'
+#' @param scaling  Table scaling factor to plot on the graphic console.  Default is "auto",
+#'                 which automatically calculates a reasonable value based on the
+#'                 number of columns in the xts data matrix.
+#'
+#' @param title_size  Title scaling factor passed on to plot_df.  Default is "auto",
+#'                    which calculates a reasonable value based on the number of
+#'                    coumns in the xts data matrix.
+#'
+#' @param ...      Additional arguments passed on to plot_df.  For example, the title
+#'                 text and size, and footnote size may be modified using this.
+#'
+#' @return A dataframe that shows the summary performance of the equity curves.  The
+#'        annualized return, the standard deviation, the Sharpe ratio and the maximum
+#'        drawdown.
+#'
+#' @export
+#----------------------------------------------------------------------------------
+perfstats <- function(data, on = 'days', plotout = TRUE, value = TRUE, percent = TRUE,
+                      digits = 2, top = 3, main = "Performance Summary",
+                      scaling = "auto", title_size = "auto", ...) {
+#
+#   #######################################
+#   ######  For development
+#   library(xtsanalytics)
+#   data = xts_data["2008/2014", 1:4]
+#   on   = "days";  plotout = TRUE; value = TRUE; percent = TRUE; digits = 2
+#   top  = 3; main = "summary"; scaling = "auto"; title_size = "auto"
+#   #######################################
+
+  # Get the returns from the equity curves
+  rets <- ROC(data, type="discrete")
+  rets <- rets[complete.cases(rets), ]
+
+  # Calculate the performance statistics dataframe
+  stats_df2 <- perf_df(rets, on, percent, digits, top)
+
+  nc        <- ncol(rets)
+
+  # Calculate global scaling and/or title size
+  # if these are set to "auto"
+  if(scaling == "auto")     scaling    <- min(1, (0.1 + 8 / nc))
+  if(title_size == "auto")  title_size <- min(1.8, 1.0 + nc/6)
+
+  if(plotout) {
+    footnote <- paste(index(data)[1], "/", index(data)[nrow(data)])
+    if(is.na(main)) main <- "Performance Summary"
+
+    # Shrink the footnote size if nc < 3 else default to 1
+    foot_size <- min(1, nc / 3 + 0.1)
+
+    # Too small if nc = 1, so put in title instead
+    if(nc == 1) {
+      main     <- paste0(main, "\n", footnote)
+      footnote <- " "
+    }
+
+    plot_df(stats_df2, main, footnote = footnote, title_size = title_size,
+            foot_size = foot_size, scaling = scaling)
+    #plot_df(stats_df2, main, footnote = footnote, title_size = title_size,
+    #        foot_size = foot_size, scaling = scaling, ...)
+  }
+
+  if(value) return(stats_df2)
+
+}  ##############  END perfstats  ##############
+
+
+#---------------------------------------------------------------------------------
+# Helper function perf_df - to calculate the performance dataframe
+# for use in other xtsanalytics functions
+#
+# This function is not exported
+#---------------------------------------------------------------------------------
+perf_df <- function(rets, on = "days", percent = TRUE, digits = 2, top = 3) {
+
+  # Compute basic performance stats
+  switch(on,
+         days = {
+           stats_df <- PerformanceAnalytics::table.AnnualizedReturns(rets, scale=252, geometric=T)
+         },
+         weeks = {
+           stats_df <- PerformanceAnalytics::table.AnnualizedReturns(rets, scale=52.18, geometric=T)
+         },
+         months = {
+           stats_df <- PerformanceAnalytics::table.AnnualizedReturns(rets, scale=12, geometric=T)
+         },
+         quarters = {
+           stats_df <- PerformanceAnalytics::table.AnnualizedReturns(rets, scale=4, geometric=T)
+         },
+         years = {
+           stats_df <- PerformanceAnalytics::table.AnnualizedReturns(rets, scale=1, geometric=T)
+         }, {
+           # Default:  stop
+           stop('Value of argument on (to scale) is invalid: ', on)
+         }
+  )
+
+  # Compute all drawdowns
+  all_dd     <- xtsdrawdowns(rets, top = top, digits = (digits + 2))
+
+
+  #  Row bind to build the final dataframe
+  rownames(stats_df)[3] <- "Annualized Sharpe"
+  stats_df2 <- rbind(stats_df[1, , drop = FALSE],
+                     all_dd, stats_df[2:3, , drop = FALSE ])
+
+  # If required, convert all rows to percent except last one
+  if(percent){
+    Nm1                        <- nrow(stats_df2) - 1
+    stats_df2[1:Nm1, ]         <- round(stats_df2[1:Nm1, ] * 100, digits)
+    rownames(stats_df2)[1:Nm1] <- paste(rownames(stats_df2)[1:Nm1], "(%)")
+
+  }
+
+  #-------------------------------------------------
+  # Add MAR ratio
+  #-------------------------------------------------
+  mar           <- -stats_df2[1, , drop = FALSE] / stats_df2[2, , drop = FALSE]
+  #mar           <- round(mar, digits = digits)
+  rownames(mar) <- "MAR"
+
+  #-------------------------------------------------
+  # Add Positive Rolling Years
+  #-------------------------------------------------
+  prices    <- cumprod_na(1 + rets)
+  mom252    <- make_features(prices, features = "mom252")[[1]]
+  mom252    <- mom252[complete.cases(mom252), ]
+  positives <- apply(mom252, 2, function(x) sum(x > 0))
+  totals    <- rep(nrow(mom252), ncol(mom252))
+  posroll   <- t(as.data.frame(positives / totals * 100))
+  rownames(posroll) <- "Pos. Rolling Years (%)"
+
+  #-------------------------------------------------
+  # Bind then round all quantities to digits
+  #-------------------------------------------------
+  stats_df2 <- rbind(stats_df2, mar, posroll)
+  stats_df2     <- round(stats_df2, digits = digits)
+
+  return(stats_df2)
+
+}
+
+
+#----------------------------------------------------------------------------------
+#  FUNCTION xtsdrawdowns
+#
+#  This function is not exported
+#  It is also slow because it uses table.Drawdowns
+#----------------------------------------------------------------------------------
+xtsdrawdowns <- function(rets, top = top, digits = 4) {
+  nc <- ncol(rets)
+  df <- data.frame(matrix(NA, nrow=top, ncol=nc), row.names=paste("Drawdown", 1:top))
+  colnames(df) <- colnames(rets)
+
+  # If only MDD needed, then use xtsmdd, otherwise loop using table.Drawdowns
+  if(top == 1) {
+    df <- xtsmdd(rets, digits = digits)
+  } else {
+    for(i in 1:nc) {
+      x       <- table.Drawdowns(rets[, i], top = top, digits = digits)
+      df[, i] <- c(x$Depth, rep(0, top - length(x$Depth)))
+    }
+    rownames(df)[1] <- "Max. Drawdown"
+  }
+
+
+  return(df)
+}
+
+
+#----------------------------------------------------------------------------------
+#  FUNCTION xtsmdd
+#
+#' Compute the maximum drawdown of an xts matrix of returns.
+#'
+#' Returns are assumed to be geometric ("discrete").  This function
+#' is very fast and works on wide xts matrices (many equity curves)
+#'
+#' @param rets   An xts matrix of equity curves, expressed as periodic returns
+#'
+#' @param digits Number of digits to report
+#'
+#' @return Returns a dataframe of maximum drawdowns, expressed as fractions.
+#'
+#'@export
+#----------------------------------------------------------------------------------
+xtsmdd <- function(rets, digits = 4) {
+  cp = cumprod_na(1 + rets)
+  cnames <- colnames(cp)
+  MaxDD <- data.frame(matrix(NA, nrow=1, ncol=length(cnames)), row.names="Max. Drawdown")
+  colnames(MaxDD) <- cnames
+  for(i in colnames(cp)) {
+    MaxDD[1,i] = min((cp[,i]/cummax(c(1, cp[,i]))[-1]) - 1)
+  }
+
+  return(round(MaxDD, digits))
+
+
+}  ##########  END xtsmdd  ##########
+
+
+#----------------------------------------------------------------------------------
+#  FUNCTION xtsCAGR
+#
+#' Compute the annualized return from an xts of equity curves (prices)
+#'
+#' The equity curves are in the form of prices, not returns.
+#'
+#' @param ec   An xts matrix of equity curves expressed as prices.
+#'
+#' @return Returns a data frame of CAGR
+#' @export
+xtscagr <- function(ec) {
+
+  freq = periodicity(ec)
+  switch(freq$scale, minute = {
+      stop("Data periodicity too high")
+    }, hourly = {
+      stop("Data periodicity too high")
+    }, daily = {
+      scale = 252
+    }, weekly = {
+      scale = 52
+    }, monthly = {
+      scale = 12
+    }, quarterly = {
+      scale = 4
+    }, yearly = {
+      scale = 1
+    })
+
+  Nyrs    <- nrow(ec) / scale
+  total_rets <- ec[nrow(ec), ] / as.numeric(ec[1, ])
+  cagr <- as.data.frame(total_rets^(1/Nyrs)) - 1
+
+  return(cagr)
+
+}
+
+#----------------------------------------------------------------------------------
+#  FUNCTION plot_performance
+#
+#' Generate combination plots to illustrate portfolio performance
+#'
+#' @param prices    An xts matrix of equity curves or asset prices.
+#'
+#' @param type      Specifies the type of plot.  If "table"
+#'                  then the equity curves are shown on the top portion
+#'                  and a table of key performance parameters is shown
+#'                  below.  If "curves" then the equity curves
+#'                  are shown on the top portion and the drawdown curves
+#'                  are shown on the bottom section.  Default is
+#'                  "table".
+#'
+#' @param main      Title at the top of the plot page
+#'
+#' @param log       Specifies whether to use a semilog scale for the equity
+#'                  curve plot.  Default is "y" specifying the y scale is logarithmic.
+#'
+#' @param ...       Additional parameters passed through to function xtsplot.
+#'
+#' @export
+#-----------------------------------------------------------------------
+plot_performance <- function(prices, type = "table", main = "Performance Summary",
+                             log = "y", ...) {
+
+  #
+  # TODO
+  #  . col = "auto" in xtsplot
+  #  . then, implement and recycle colset in colorset
+  #  . figure out how to  rename y labels in xtsplot for mom252
+  #  . test on pdf to ensure sizing is all fine.
+  # main = "performance summary"
+  # log = "y"
+  # prices <- xtsbind(xts_data[, c(1,4,8)], xts_data[, 1:5])
+  # prices <- xts_data[, 1:8, drop = FALSE]
+
+
+  op <- par(no.readonly = TRUE)
+  switch(type,
+         table = {
+           #-------------------------------------------------------------
+           # Plot equity curves at top, performance table below
+           #-------------------------------------------------------------
+           layout(matrix(c(1, 1, 2, 3), nrow = 2, byrow = TRUE),
+                  heights = c(2, 1, 1), widths = 1)
+           par(mar = c(2.8, 5, 4, 2))
+
+
+           N  <- ncol(prices)
+           if(N > 8) {
+             N  <- 8
+             sprint("perfplot:  Too many curves to plot. Plotting first 8 columns only.")
+             prices <- prices[, 1:N]
+           }
+
+           #------------------------------------------------------------
+           # Override table size (cex) based on number of columns
+           #------------------------------------------------------------
+           if(N <= 5)      cex <- 1    else
+             if(N == 6)    cex <- 0.9  else
+               if(N == 7)  cex <- 0.8  else
+                 cex <- 0.75
+
+
+           xtsplot(prices, main = main, log = log, ...)
+           #xtsplot(prices, main = main, log = log)
+
+           pf <- perfstats(prices, plotout = FALSE, top = 3)
+           print(pf)
+
+           textplot(pf[1:4,, drop = FALSE], wrap.rownames = 23, cex = cex,
+                    col.rownames=c("darkgreen", "red", "grey40", "grey40" ),
+                    cmar = 1.0, rmar = 0.1)
+           textplot(pf[c(6, 5, 7, 8),, drop = FALSE], wrap.rownames = 23,
+                    col.rownames=c("darkgreen", "red", "darkgreen", "grey40" ),
+                    cmar = 1.0, rmar = 0.1, cex = cex)
+
+
+           # textplot(pf[1:4,, drop = FALSE], wrap.rownames = 23, mar = c(0.1, 0.1, 0, 3.5),
+           #          col.rownames=c("darkgreen", "red", "grey40", "grey40" ),
+           #          cmar = 1.0, rmar = 0.1)
+           # textplot(pf[c(6, 5, 7, 8),, drop = FALSE], wrap.rownames = 23,
+           #          col.rownames=c("darkgreen", "red", "darkgreen", "grey40" ),
+           #          cmar = 1.0, rmar = 0.1, mar = c(0.1, 0.1, 0, 3.5))
+         },
+         curves = {
+           #-------------------------------------------------------------
+           # Plot equity curves at top, Drawdown curve in the middle,
+           # and rolling returns curve at bottom.
+           #------------------------------------------------------------
+           layout(matrix(c(1, 2, 3)), heights = c(2, 1, 1), widths = 1)
+           par(mar = c(3, 5, 4, 2))
+
+           prices <- prices[complete.cases(prices), ]
+           rets   <- ROC(prices, type = "discrete", na.pad = FALSE)
+
+           mom252 <- make_features(prices, "mom252")[[1]] * 100
+
+           col  <- make_colors(n = ncol(prices), type = "lines")
+           xtsplot(prices, col = names(col), main = main, log = log, cex.main = 1.5,
+                   legend = "topleft", ...)
+           xtsplot(mom252, hline = 0, main = "12 Months Rolling Returns",
+                   norm = FALSE, ylab = "Percent", xlab = "Rolling Performance",
+                   legend = "topleft", col = names(col))
+
+           chart.Drawdown(rets, colorset = col, lwd = 1, cex.lab = 1.2, cex.main = 1.25,
+                          cex.axis = 0.8, ylab = "",
+                          main = "Drawdown from Peak Equity")
+           title(ylab = "Fraction Lost", mgp = c(2.0, 1, 0))
+
+         }, {
+           # Default - stop with error
+           stop("perfplot:  Invalid plot type argument.")
+         })
+
+
+
+  par(op)
+
+
+}

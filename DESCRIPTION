@@ -1,0 +1,38 @@
+Package: xtsanalytics
+Type: Package
+Title: Predictive models for investment strategies and related analysis
+Version: 0.1.0
+Date: 2016-11-04
+Authors@R: person("Patenaude", "Jean-Marc", , "jeanmarcgp@gmail.com", c("aut", "cre"))
+Description: A set of functions to analyze investments, develop predictive models using
+    machine learning methods, and optimize investment portfolios.
+License: GPL-2
+LazyData: TRUE
+Depends:
+    R (>= 3.1.2),
+    PerformanceAnalytics,
+    quantmod,
+    xts,
+    zoo,
+    fTrading,
+    stringr,
+    qdapRegex,
+    PortfolioAnalytics,
+    randomForest,
+    readxl,
+    h2o
+Imports:
+    ggplot2
+Suggests:
+    testthat,
+    knitr,
+    gridExtra,
+    RColorBrewer,
+    h2oEnsemble,
+    compiler,
+    doParallel,
+    foreach,
+    Rcpp,
+    rmarkdown
+VignetteBuilder: knitr
+RoxygenNote: 5.0.1
