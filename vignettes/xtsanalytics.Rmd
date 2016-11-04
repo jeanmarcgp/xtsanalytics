@@ -1,0 +1,132 @@
+---
+title: "Package xtsanalytics"
+author: "Jean-Marc Patenaude"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{xtsanalytics package vignette and overview}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+The **xtsanalytics package** provides a set of function for analysis and development of investment strategies. The package includes functions in these general categories:
+
+- General purpose functions for data analysis and manipulation of xts objects
+- Several types of xts plotting and visualization functions
+- Features and indicator generating functions, suitable for machine learning modeling
+- Functions to explore the autocorrelation of returns, including of higher moments
+- A random forest walk-forward optimization system to make better asset returns predictions
+- A portfolio optimization set of functions to complement package **PortfolioAnalytics**
+
+
+The package also leverages and extends several finance related packages.  These packages should be installed in your R installation since xtsanalytics assumes their availability:
+
+- quantmod (itself requiring xts and zoo)
+- PerformanceAnalytics
+- fTrading
+- gridExtra
+- RcolorBrewer
+- stringr
+- randomForests
+- Rcpp
+
+
+## statfolio data structure and Walk-Forward Optimization
+
+xtsanalytics makes extensive use of the xts data structure.  In addition, a new data structure
+was created to easily create statistical equity curves of a portfolio built using Walk-Forward
+optimization (WFO).  This is called the statfolio.  There may be different classes of statfolio
+depending on which function was used to generate it.  For example, if function **optimize_statfolio()**
+was used, then the resulting statfolio is of class "optimize.portfolio.rebalancing".
+
+WFO optimizes an equity curve at a series of specific points in time using a rolling window.  For
+example, a typical use would be to optimize monthly, at the end of each month.  In doing so, the
+data window used is N days up to and including the WFO date, resulting in an equity curve up to the
+current WFO date.  The following month, the same is repeated to generate the section of equity curve
+from the previous WFO date up to and including the current WFO date. For example, for a 10 year equity 
+curve, this would result in 10 years * 12 months = 120 WFO optimizations if done monthly.  Each of 
+these blocks of time (between two consecutive WFO dates) can be used to create a subfolio.
+
+A subfolio consists of multiple optimizations (or models) performed between two consecutive WFO dates.
+For instance, a portfolio optimizer (see optimize_statfolio) may converge only to an approximate 
+set of portfolio weights.  In such a case, it may be prudent to run several optimizations with different
+seeds in order to get a set of weights.  The average of these weights could then be used in a real
+portfolio.  In addition, the distribution of these weights can be analyzed to see how much variance
+exists between these optimization results, and reach conclusions regarding the importance of rebalancing
+to accurate weights.  This set of multiple weights is the subfolio.
+
+The statfolio is defined to be the set of all subfolios resulting from a WFO run with more than
+a single optimization performed as each WFO dates.
+
+## Using statfolios to generate equity curve statistics
+
+A statfolio can be used to generate equity curve statistics.  For example, let's assume that
+**wfo_statfolio()** is run on a set of assets, with argument N = 5.  Setting N = 5 means that 
+the optimization is repeated 5 times at each WFO dates.  Let's further assume monthly optization.
+
+If the WFO optimization is done over 12 months, there will be 5^12 = 244 million possible equity
+curve paths, since for every month, there are 5 possible paths to choose!  Function **stitch_statfolio()**
+can be used to generate a large number of such randomly picked equity curve paths to see the 
+statistical effects on the equity curve resulting from the optimizer approximations.
+
+
+
+
+## Core functions available in xtsanalytics
+
+- **xtsplot()** is an easy to use plotting function. It allows multiple equity curves with a nice default set of colors, normalization of curves at the beginning, log scales, shaded regions and several other useful visualization features.
+- **make_features()** is used to generate a set of features from a matrix of asset prices. This is useful for a machine learning model for instance. Each feature is an xts matrix, and these are returned in a list.
+- **xtsoverlay()** is used to align time series to a common point in time (t0). This is used to help visualize (using xtsplot) how curves can line up when time-shifted. Returns a zoo matrix instead of xts since the date index is lost, as the index is now relative.
+- **wfo_grow_forest()** is used to perform walk-forward optimization on a single set of parameter using the random forest machine learning algorithm.  It is single-threaded.
+- **wfo_grow_jungle()** calls *wfo_grow_forest()* multiple times, each with a different set of parameters.  It is set up to use multiple threads using package doParallel.  Since doParallel does not allow to print to the console, a live report is provided in a log file to monitor progress. 
+
+
+## Analysis and general purpose functions
+
+- **cumprod_na()** is used to build an equity curve from returns
+- **interpolate_returns()** can be used to interpolate an equity curve when merging with another one with finer time granularity.  This is useful, for example, when plotting a monthly curve overlaid with a daily curve.
+- **starttime()** is used to start a timer before doing a CPU-intensive task.
+- **elapsedtime()** is used to report the elapsed time since starttime() was last invoked.
+
+
+## Vignette Info
+
+Note the various macros within the `vignette` setion of the metadata block above. These are required in order to instruct R how to build the vignette. Note that you should change the `title` field and the `\VignetteIndexEntry` to match the title of your vignette.
+
+## Styles
+
+The `html_vignette` template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:
+
+    output: 
+      rmarkdown::html_vignette:
+        css: mystyles.css
+
+## Figures
+
+The figure sizes have been customised so that you can easily put two images side-by-side. 
+
+```{r, fig.show='hold'}
+#plot(1:10)
+#plot(10:1)
+```
+
+You can enable figure captions by `fig_caption: yes` in YAML:
+
+    output:
+      rmarkdown::html_vignette:
+        fig_caption: yes
+
+Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
+
+## More Examples
+
+You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
+
+```{r, echo=FALSE, results='asis'}
+#knitr::kable(head(mtcars, 10))
+```
+
+Also a quote using `>`:
+
+> "He who gives up [code] safety for [code] speed deserves neither."
+([via](https://twitter.com/hadleywickham/status/504368538874703872))
