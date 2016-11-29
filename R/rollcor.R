@@ -1,4 +1,3 @@
-
 ####################################################################################
 # FILE rollcor.R
 #
@@ -25,7 +24,7 @@
 #'
 #' @export
 #-------------------------------------------------------------------------------------
-prediction_stability <- function(features, target, width = 63) {
+rollcor <- function(features, target, width = 63) {
 
   # ################  For code testing  ################
   # library(xtsanalytics)
@@ -59,8 +58,7 @@ prediction_stability <- function(features, target, width = 63) {
 
   }
 
- # xtsplot(ycor, norm = FALSE, ylab = "Correlation",
-  #        main = "Correlation of feature vs. target")
+
 
 
   return(ycor)
