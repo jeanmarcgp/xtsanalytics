@@ -111,27 +111,38 @@ optimize_statfolio <- function(rets, portfolio, train_window = 63, N = 1,
 
   # Extract the max weights vector from maxwtsmat
   maxweights <- maxwtsmat[index(last(rets)), ]
+  if(ncol(maxweights) != ncol(maxwtsmat))
+    stop("FUNCTION optimize_statfolio: maxwtsmat index not in range. ")
   # print(str(maxweights))
-  # sprint("maxwtsmat:")
+  sprint("maxwtsmat:")
+  print(tail(maxwtsmat))
   # print(str(maxwtsmat))
   # print(index(last(rets)))
-  # print(tail(maxwtsmat))
+
 
   maxwtsvec  <- as.vector(maxweights)
   names(maxwtsvec) <- colnames(maxweights)
 
+  sprint("maxwtsvec:")
+  print(maxwtsvec)
   temp_port <- portfolio
   temp_port <- add.constraint(temp_port, type = "box", min = 0.0, max = maxwtsvec)
-  print(maxwtsvec)
+
  # print(temp_port)
 
   for(i in 1:N) {
+    sprint("Looping in optimize_statfolio.  i = %s", i)
+    print(tail(most_recent_rets))
     mrp_opt <- optimize.portfolio(R = most_recent_rets, portfolio = temp_port,
                                   optimize_method = optimize_method,
                                   trace = TRUE, ...)
+
+    sprint(">>>>>> completed optimize.portfolio call at iteration %i", i)
+    print(mrp_opt)
     out[[i]]      <- mrp_opt
     wts_mat[i, ]  <- mrp_opt$weights
   }
+
 
   #------------------------------------------------------------
   # Compute run statistics to report back

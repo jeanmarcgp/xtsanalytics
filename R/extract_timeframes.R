@@ -16,11 +16,15 @@
 #' of all dataframe rows.  This provides a sense of the size of each
 #' dataframe compared to the list provided.
 #'
+#' The dataframe list may contain one or more xts matrices.  In
+#' such case, the cdate argument is ignored, and the index of the
+#' xts matrix is used to calculate the timeframe.
+#'
 #' @param dflist   A list of dataframes to be examined.  The list should
 #'                 be named, as each name is associated with a row in the
 #'                 dataframe returned by the function.  See details.
 #'
-#' @param cdates   The name or number specifying the column in the dataframes
+#' @param cdate    The name or number specifying the column in the dataframes
 #'                 containing the dates.  The dates may be of class Date or
 #'                 char.  If char, they will first be converted to class Date.
 #'
@@ -54,6 +58,8 @@ extract_timeframes <- function(dflist, cdate, showpct = TRUE, printout = TRUE) {
   # dflist   = list(Training_set   = trainset,
   #                 Validation_set = validset,
   #                 Test_set       = testset)
+  #
+  # dflist   = list(xts_data[1:30, 1:3])
   # cdate    = "dates"
   # showpct  = TRUE
   # printout = TRUE
@@ -67,7 +73,15 @@ extract_timeframes <- function(dflist, cdate, showpct = TRUE, printout = TRUE) {
   for(i in 1:length(dflist)) {
 
     df          <- dflist[[i]]
-    df$dfcdate  <- as.Date(df[, cdate])
+
+    if(any(class(df) == "xts")) {
+      #  Convert xts to dataframe and add date column
+      df         <- as.data.frame(df)
+      df$dfcdate <- row.names(df)
+    } else {
+      df$dfcdate  <- as.Date(df[, cdate])
+    }
+
     tfmin       <- min(df$dfcdate)
     tfmax       <- max(df$dfcdate)
 

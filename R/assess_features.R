@@ -76,23 +76,22 @@
 #' @export
 #-----------------------------------------------------------------------------------
 assess_features <- function(features, train_set, val_set, Nrepeat = 1, mlalgo = "rf",
-                          mlpar       = list(mtry = 1, ntree = 1000, min_rows = 5),
-                          meritFUN    = "trading_returns",
-                          meritFUNpar = list(long_thres = 0, short_thres = 0)) {
+                            mlpar       = list(mtry = 1, ntree = 1000, min_rows = 5),
+                            meritFUN    = "trading_returns",
+                            meritFUNpar = list(long_thres = 0, short_thres = 0)) {
 
   # ######## For Testing Code #######
-  # train_set  = airquality[1:110, ]
-  # train_set  = train_set[complete.cases(train_set), ]
-  # val_set    = airquality[111:nrow(airquality), ]
-  # val_set    = val_set[complete.cases(val_set), ]
+  # library(xtsanalytics)
+  # features          = c("Perc52WkHiRank", "PQMaxNDayRetRank")
+  # train_set         = Earnings[1:3000, c("Ret1", features)]
+  # val_set           = Earnings[3001:3500, c("Ret1", features)]
   # Nrepeat    = 2
-  # mlalgo     = "h2o_rf"
+  # mlalgo     = "xgboost"
+  # mlpar      = pad_mlpar(mlalgo = mlalgo)
   #
-  # features   = colnames(train_set)[2:6]
-  # mlpar      = list(mtry = 1, ntree = 1000)
   # meritFUN   = "trading_returns"
-  # meritFUNpar = list(long_thres = 40, short_thres = -75)
-  # h2o.init(nthreads = -1)
+  # meritFUNpar = list(long_thres = 0.005, short_thres = -75)
+  #
   # #######
 
   #--------------------------------------------------------------
@@ -117,51 +116,13 @@ assess_features <- function(features, train_set, val_set, Nrepeat = 1, mlalgo = 
 
     sprint("\nFunction assess_features: Run # %s", i)
     sprint("----------------------------------------")
-    switch(mlalgo,
-           rf     = {
-             #----------------------------------------------------------------
-             # Traditional Random Forest model selected.
-             #----------------------------------------------------------------
-             sprint("Training traditional random forest model...")
-             ml  <- randomForest::randomForest(y          = traindata[, 1],
-                                               x          = traindata[, 2:nc],
-                                               mtry       = mlpar$mtry,
-                                               ntree      = mlpar$ntree,
-                                               na.action  = na.action
-             )
-             sprint("predicting random forest model...")
-             yhat    <- predict(ml, valdata)
-           },
-           h2o_rf = {
-             #----------------------------------------------------------------
-             # h2o Random Forest model selected.
-             #----------------------------------------------------------------
-             sprint("Training h2o random forest model...")
-             h2o::h2o.removeAll()          # Clean slate - in case cluster was already running
 
-             y          <- colnames(traindata)[1]
-             train      <- h2o::as.h2o(traindata)
-             validation <- h2o::as.h2o(valdata)
-             ml <-  h2o::h2o.randomForest(x                 = features,
-                                          y                 = y,
-                                          training_frame    = train,
-                                          #validation_frame  = validation,
-                                          mtries            = mlpar$mtry,
-                                          ntrees            = mlpar$ntree,
-                                          min_rows          = mlpar$min_rows,
-                                          max_depth         = mlpar$max_depth
-             )
-
-             sprint("predicting h2o random forest model...")
-             yhat    <- as.data.frame(predict(ml, validation))
-
-           },
-           {
-             stop("mlalgo reached default in switch statement.")
-           })
+    yhat <- ml_trainpredict(train_set = traindata,
+                            valid_set = valdata,
+                            ycol = 1, mlalgo = mlalgo)
 
 
-    predmat <- cbind(yhat, valdata[, 1, drop = FALSE])
+    predmat <- cbind(yhat[, 1, drop = FALSE], valdata[, 1, drop = FALSE])
 
 
     sprint("Computing figure of merit.")
@@ -171,7 +132,7 @@ assess_features <- function(features, train_set, val_set, Nrepeat = 1, mlalgo = 
                                                        long_thres  = meritFUNpar$long_thres,
                                                        short_thres = meritFUNpar$short_thres),
                      stop("meritFUN not a valid function in switch statement.")
-    )
+                     )
 
     FOMdf <- rbind(FOMdf, as.data.frame(t(FOMvec)))
 
@@ -198,6 +159,48 @@ assess_features <- function(features, train_set, val_set, Nrepeat = 1, mlalgo = 
 
 }  ##########  END FUNCTION assess_features  ##########
 
+# switch(mlalgo,
+#        rf     = {
+#          #----------------------------------------------------------------
+#          # Traditional Random Forest model selected.
+#          #----------------------------------------------------------------
+#          sprint("Training traditional random forest model...")
+#          ml  <- randomForest::randomForest(y          = traindata[, 1],
+#                                            x          = traindata[, 2:nc],
+#                                            mtry       = mlpar$mtry,
+#                                            ntree      = mlpar$ntree,
+#                                            na.action  = na.action
+#          )
+#          sprint("predicting random forest model...")
+#          yhat    <- predict(ml, valdata)
+#        },
+#        h2o_rf = {
+#          #----------------------------------------------------------------
+#          # h2o Random Forest model selected.
+#          #----------------------------------------------------------------
+#          sprint("Training h2o random forest model...")
+#          h2o::h2o.removeAll()          # Clean slate - in case cluster was already running
+#
+#          y          <- colnames(traindata)[1]
+#          train      <- h2o::as.h2o(traindata)
+#          validation <- h2o::as.h2o(valdata)
+#          ml <-  h2o::h2o.randomForest(x                 = features,
+#                                       y                 = y,
+#                                       training_frame    = train,
+#                                       #validation_frame  = validation,
+#                                       mtries            = mlpar$mtry,
+#                                       ntrees            = mlpar$ntree,
+#                                       min_rows          = mlpar$min_rows,
+#                                       max_depth         = mlpar$max_depth
+#          )
+#
+#          sprint("predicting h2o random forest model...")
+#          yhat    <- as.data.frame(predict(ml, validation))
+#
+#        },
+#        {
+#          stop("mlalgo reached default in switch statement.")
+#        })
 
 
 #-----------------------------------------------------------------------------------

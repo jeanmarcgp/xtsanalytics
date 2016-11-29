@@ -122,18 +122,24 @@ wfo_statfolio <- function(rets, portfolio, roll_window = 63, N = 1, Ncores = 1,
     outlist <- list()   # All WFO dates (superset)
     ndates  <- length(ep_i)
     sprint("Number of dates to optimize: %s", ndates)
+    sprint("First rebalance date: %s", index(rets[ep_i[1]]))
 
     #-----------------------------------------------------------
     # Start multi-core jobs, store results in outlist
     #-----------------------------------------------------------
     cl <- start_parallel(Ncores = Ncores)
-    outlist <- foreach(k = 1:ndates, .packages = "xtsanalytics") %dopar% {
+    outlist <- foreach(k = 1:(ndates), .packages = "xtsanalytics",
+                       .maxcombine = (ndates + 1), .verbose = TRUE) %dopar% {
                          #------------------------------------------------------------
                          # Subset returns as needed by rolling window
                          #------------------------------------------------------------
                          win_start     <- ep_i[k] - roll_window + 1
                          win_end       <- ep_i[k]
                          rets_window   <- rets[win_start:win_end]
+                         sprint("tail or rets-window:")
+                         print(tail(rets_window))
+                         print(tail(objfnmat))
+                         print(tail(maxwtsmat))
 
                          folio <- optimize_statfolio(rets            = rets_window,
                                                      portfolio       = portfolio,

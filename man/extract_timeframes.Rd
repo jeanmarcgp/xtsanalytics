@@ -11,6 +11,10 @@ extract_timeframes(dflist, cdate, showpct = TRUE, printout = TRUE)
 be named, as each name is associated with a row in the
 dataframe returned by the function.  See details.}
 
+\item{cdate}{The name or number specifying the column in the dataframes
+containing the dates.  The dates may be of class Date or
+char.  If char, they will first be converted to class Date.}
+
 \item{showpct}{Logical.  If true (default) then a column is included
 in the returned dataframe showing the size (by number of
 rows) of the dataframe examined relative to the size of
@@ -19,10 +23,6 @@ as a percentage.}
 
 \item{printout}{Logical.  Specifies whether to print the returned dataframe
 to the console or not.  Default is TRUE.}
-
-\item{cdates}{The name or number specifying the column in the dataframes
-containing the dates.  The dates may be of class Date or
-char.  If char, they will first be converted to class Date.}
 }
 \value{
 A dataframe is created with the timeframe information.
@@ -36,5 +36,10 @@ corresponding timeframe. In addition, the number of rows of each
 dataframe is counted and reported as a percentage of the total
 of all dataframe rows.  This provides a sense of the size of each
 dataframe compared to the list provided.
+}
+\details{
+The dataframe list may contain one or more xts matrices.  In
+such case, the cdate argument is ignored, and the index of the
+xts matrix is used to calculate the timeframe.
 }
 

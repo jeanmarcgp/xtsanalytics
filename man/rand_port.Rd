@@ -4,8 +4,7 @@
 \alias{rand_port}
 \title{Generates N random portfolios based on an asset universe}
 \usage{
-rand_port(data, N = 50, Kassets = 1, weights = "equal",
-  return_ec = FALSE)
+rand_port(data, N = 50, K = 1, weights = "equal", return_ec = FALSE)
 }
 \arguments{
 \item{data}{An xts matrix of periodic returns (NOT prices).  These
@@ -13,12 +12,16 @@ may be daily, weekly, monthly, quarterly or yearly returns.}
 
 \item{N}{The number of random portfolios to generate}
 
-\item{Kassets}{The number of asset returns randomly picked (without replacement)
+\item{K}{The number of asset returns randomly picked (without replacement)
 at each time period to build each random strategy equity curve.}
 
 \item{weights}{Specifies how the asset weights will be assigned in each random
 portfolio. Set to "equal" to specify equal weighting.  Set to
-"uniform" to specify a uniform random distribution for each asset.}
+"uniform" to specify a uniform random distribution for each asset.
+Set to "average" to calculate the equal weight, daily rebalance
+equity curve (very fast).  By the Central Limit Theorem, all
+equity curves should be identical.  However, statistics are not
+available when set to "average" (return NAs).}
 
 \item{return_ec}{Logical.  If set to TRUE, all randomly generated equity curves
 are returned via an object $ec in the returned list. Otherwise,

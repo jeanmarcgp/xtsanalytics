@@ -154,7 +154,7 @@ make_features <- function(prices, features, smooth = NA, on = "days", target = N
   }
 
   # Feature names using returns instead of prices
-  featname_rets <- c("sd", "rets", "retsq", "emar", "smar", "sdup", "sddn",
+  featname_rets <- c("sd", "kurt", "rets", "retsq", "emar", "smar", "sdup", "sddn",
                      "sdnaup", "sdnadn", "tailratio")
 
   # Parse for separators for compounded features: the dot and underscore
@@ -289,6 +289,10 @@ make_transform <- function(data, feature, addname = FALSE) {
     x[] <- NA
     x[] <- switch(featname,
                   sd     = zoo::rollapplyr(data, width = featnum, FUN = sd),
+                  kurt   = {
+                    zoo::rollapplyr(data, width = featnum, FUN = kurtosis, method = "excess")
+                    stop("Rewrite the kurtosis function to do multiple columns!")
+                  },
                   sdup   = {
                     fdata   <- data
                     fdata[] <- apply(fdata, 2, function(x) ifelse(x > 0, x, 0))

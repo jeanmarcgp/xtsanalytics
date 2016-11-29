@@ -44,8 +44,9 @@ text and size, and footnote size may be modified using this.}
 }
 \value{
 A dataframe that shows the summary performance of the equity curves.  The
-       annualized return, the standard deviation, the Sharpe ratio and the maximum
-       drawdown.
+       annualized return, the maximum drawdown and, by default the second and third
+       drawdowns, the annualized standard deviation, the annualized Sharpe ratio (rf = 0%)
+       the MAR ratio, the ulcer index and the percentage of positive rolling years.
 }
 \description{
 Returns a dataframe containing performance stats on one or multiple

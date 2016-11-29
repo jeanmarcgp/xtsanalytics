@@ -16,12 +16,16 @@
 #' @param N          The number of random portfolios to generate
 #'
 #'
-#' @param Kassets    The number of asset returns randomly picked (without replacement)
+#' @param K          The number of asset returns randomly picked (without replacement)
 #'                   at each time period to build each random strategy equity curve.
 #'
 #' @param weights    Specifies how the asset weights will be assigned in each random
 #'                   portfolio. Set to "equal" to specify equal weighting.  Set to
 #'                   "uniform" to specify a uniform random distribution for each asset.
+#'                   Set to "average" to calculate the equal weight, daily rebalance
+#'                   equity curve (very fast).  By the Central Limit Theorem, all
+#'                   equity curves should be identical.  However, statistics are not
+#'                   available when set to "average" (return NAs).
 #'
 #' @param return_ec  Logical.  If set to TRUE, all randomly generated equity curves
 #'                   are returned via an object $ec in the returned list. Otherwise,
@@ -69,59 +73,85 @@
 # This version is, in fact NOT slower than
 # the version with byte compiler. Needs Rcpp!
 #################################################
-rand_port <- function(data, N = 50, Kassets = 1, weights = "equal",
+rand_port <- function(data, N = 50, K = 1, weights = "equal",
                       return_ec = FALSE) {
+
+  # ####################  To Test code  ##############
+  # library(xtsanalytics)
+  # data      = ROC(xts_data[, c(1,5,6,7)], type = "discrete")[-1, ]
+  # N         = 100
+  # K         = 1
+  # weights   = "average"  #"uniform" #"equal"
+  # return_ec = FALSE
+  # ########################
 
   cnames <- colnames(data)
   nc     <- ncol(data)
 
-  ecnames <- paste0("ec", 1:N)
-  ecrets  <- emptyxts(cnames = ecnames, order.by = index(data))
+  #------------------------------------------------------
+  # Equal-weight daily rebalance if weights = "average"
+  #------------------------------------------------------
+  if(weights == "average") {
+    ecrets   <- emptyxts(cnames = "Average", order.by = index(data))
+    ecrets[] <- apply(data, 1, mean)
+    ec       <- cumprod_na(1 + ecrets)
+    ecavg    <- ec
 
-  cnames <- paste0("Asset_", 1:K)
-  rmat   <- emptyxts(cnames = cnames, order.by = index(data))
-  wmat   <- rmat
+  } else {
+    #---------------------------------------------------
+    # This code for weights = "equal" or "uniform"
+    #---------------------------------------------------
+    ecnames <- paste0("ec", 1:N)
+    ecrets  <- emptyxts(cnames = ecnames, order.by = index(data))
 
-  # Set up equal weights in wmat holder
-  ew     <- 1 / ncol(wmat)
-  wmat[] <- rep(ew, length(wmat))
+    cnames <- paste0("Asset_", 1:K)
+    rmat   <- emptyxts(cnames = cnames, order.by = index(data))
+    wmat   <- rmat
 
-  #-------------------------------------------
-  # MAIN LOOP for N portfolios
-  #  Quite slow but need Rcpp to accelerate
-  #  Byte code compile doesn't help!
-  #-------------------------------------------
-  for(i in 1:N) {
-    #--------------------------------------------
-    # Build random returns and weights matrices
-    #--------------------------------------------
-    rmat[] <- t(apply(data, 1, function(x) sample(x, size = K, replace = FALSE)))
+    # Set up equal weights in wmat holder
+    ew     <- 1 / ncol(wmat)
+    wmat[] <- rep(ew, length(wmat))
 
-    if(weights == "uniform") {
-      # Compute uniform random weights, else just keep wmat as is
-      wmat[] <- runif(length(wmat), min = 0, max = 1)
-      wmat[] <- wmat / apply(wmat, 1, sum)
+    #-------------------------------------------
+    # MAIN LOOP for N portfolios
+    #  Quite slow but need Rcpp to accelerate
+    #  Byte code compile doesn't help!
+    #-------------------------------------------
+    for(i in 1:N) {
+      #--------------------------------------------
+      # Build random returns and weights matrices
+      #--------------------------------------------
+      rmat[] <- t(apply(data, 1, function(x) sample(x, size = K, replace = FALSE)))
+
+      if(weights == "uniform") {
+        # Compute uniform random weights, else just keep wmat as is
+        wmat[] <- runif(length(wmat), min = 0, max = 1)
+        wmat[] <- wmat / apply(wmat, 1, sum)
+      }
+
+      #--------------------------------------
+      # Compute equity curve (as returns)
+      #--------------------------------------
+      eca          <- rmat * wmat
+      ecrets[, i]  <- apply(eca, 1, sum)
     }
 
-    #--------------------------------------
-    # Compute equity curve (as returns)
-    #--------------------------------------
-    eca          <- rmat * wmat
-    ecrets[, i]  <- apply(eca, 1, sum)
-  }
+    # These functions are very fast!
+    ecrets$ecavg <- as.numeric(apply(ecrets, 1, mean))
+    ec           <- cumprod_na(1 + ecrets) # very fast!
+    ecavg        <- ec[, "ecavg", drop = FALSE]
+
+    # remove ecavg from the distributions to guarantee no biasing
+    ec           <- ec[,     -ncol(ec)]
+    ecrets       <- ecrets[, -ncol(ec)]
+
+  }  #######  END Else Statement  #######
+
+
 
   #-------------------------------------------------
   # Calculate statistics to report
   #-------------------------------------------------
-  # These functions are very fast!
-  ecrets$ecavg <- as.numeric(apply(ecrets, 1, mean))
-  ec           <- cumprod_na(1 + ecrets) # very fast!
-  ecavg        <- ec[, "ecavg", drop = FALSE]
-
-  # remove ecavg from the distributions to guarantee no biasing
-  ec           <- ec[,     -ncol(ec)]
-  ecrets       <- ecrets[, -ncol(ec)]
-
   cagr        <- as.numeric(xtscagr(ec))
   names(cagr) <- colnames(ec)
 

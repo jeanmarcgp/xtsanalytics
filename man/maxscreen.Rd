@@ -6,7 +6,7 @@
 \usage{
 maxscreen(prices, maxweights = 0.5, volfeature = "sd252",
   volthresh = 0.12, momfeature = "mom252", momthresh = 0.05,
-  cashasset = 1)
+  cashasset = 1, rankthresh = ncol(prices))
 }
 \arguments{
 \item{prices}{An xts matrix of asset prices.}
@@ -29,12 +29,29 @@ feature.}
 asset has a fixed weight of 1 so the optimizer can
 always select it, if all other assets have a zero
 weight.  Default is column 1.}
+
+\item{rankthres}{The rank value beyond which an asset weight is forced
+to zero.  For example, if rankthres = 4, then the top
+4 highest momentum asset are included at the given date
+while all other assets are excluded by setting their
+weights to zero.  The cash asset however is always included
+and treated separately.  So in the above example, the top
+4 assets are included plus the cash asset.}
 }
 \value{
 Returns an xts matrix of asset weights. Some weights may be
         zero if the asset was screened out at the given time index.
 }
 \description{
-Volatility adjusted momentum screen for optimizing portfolios
+Returns an xts matrix of asset weights, modulated according to
+a set of rules.
+}
+\details{
+The xts matrix returned will generally start at a later time
+that the prices matrix since features are calculated from it.
+Therefore, you must ensure that it properly aligns with
+other matrices in the calling function.
+
+The first rule applied is...
 }
 

@@ -448,7 +448,7 @@ make_colors <- function(n = 0,
                            'brown', 'turquoise', 'darkpink', 'mauve', 'yellow', 'grey')
 
            # Reorder the colors
-           col        <- col[c(1,3,5,7,9,11,12,14,16,2,4,6,8,10,13,15,17)]
+           col        <- col[c(3,5,7,9,11,12,14,16,1,2,4,6,8,10,13,15,17)]
          },
          #----------------------------------------------
          #  regions color type selection

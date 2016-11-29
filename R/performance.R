@@ -8,11 +8,12 @@
 #  LIST OF FUNCTIONS:
 #  ------------------
 #
-#  .perfstats    Generates performance stats from equity curves
-#  .xtsdrawdowns Multiple drawdowns
-#  .xtsmdd       Efficiently computes the maximum drawdown from returns
-#  .xtsCAGR      Efficiently computes the CAGR from an xts of returns
-#  .plot_performance     Various complex plots to summarize EC performance
+#  .perfstats         Generates performance stats from equity curves
+#  .ulcerperformance  Ulcer performance index.
+#  .xtsdrawdowns      Multiple drawdowns
+#  .xtsmdd            Efficiently computes the maximum drawdown from returns
+#  .xtsCAGR           Efficiently computes the CAGR from an xts of returns
+#  .plot_performance  Various complex plots to summarize EC performance
 #
 #
 ###################################################################################
@@ -57,8 +58,9 @@
 #'                 text and size, and footnote size may be modified using this.
 #'
 #' @return A dataframe that shows the summary performance of the equity curves.  The
-#'        annualized return, the standard deviation, the Sharpe ratio and the maximum
-#'        drawdown.
+#'        annualized return, the maximum drawdown and, by default the second and third
+#'        drawdowns, the annualized standard deviation, the annualized Sharpe ratio (rf = 0%)
+#'        the MAR ratio, the ulcer index and the percentage of positive rolling years.
 #'
 #' @export
 #----------------------------------------------------------------------------------
@@ -102,9 +104,8 @@ perfstats <- function(data, on = 'days', plotout = TRUE, value = TRUE, percent =
     }
 
     plot_df(stats_df2, main, footnote = footnote, title_size = title_size,
-            foot_size = foot_size, scaling = scaling)
-    #plot_df(stats_df2, main, footnote = footnote, title_size = title_size,
-    #        foot_size = foot_size, scaling = scaling, ...)
+            foot_size = foot_size, scaling = scaling, ...)
+
   }
 
   if(value) return(stats_df2)
@@ -120,50 +121,69 @@ perfstats <- function(data, on = 'days', plotout = TRUE, value = TRUE, percent =
 #---------------------------------------------------------------------------------
 perf_df <- function(rets, on = "days", percent = TRUE, digits = 2, top = 3) {
 
+
+  # ################  Code for testing   ##################
+  # library(xtsanalytics)
+  # rets  = ROC(xts_data[, 1:4], type = "discrete")
+  # rets  = rets[complete.cases(rets),]
+  # on    = "days"
+  # percent = TRUE
+  # digits  = 2
+  # top     = 3
+  #
+  # #######################################################
+
+
   # Compute basic performance stats
   switch(on,
          days = {
-           stats_df <- PerformanceAnalytics::table.AnnualizedReturns(rets, scale=252, geometric=T)
+           stats_df <- PerformanceAnalytics::table.AnnualizedReturns(rets, scale=252, geometric=T,
+                                                                     digits = digits + 2)
          },
          weeks = {
-           stats_df <- PerformanceAnalytics::table.AnnualizedReturns(rets, scale=52.18, geometric=T)
+           stats_df <- PerformanceAnalytics::table.AnnualizedReturns(rets, scale=52.18, geometric=T,
+                                                                     digits = digits + 2)
          },
          months = {
-           stats_df <- PerformanceAnalytics::table.AnnualizedReturns(rets, scale=12, geometric=T)
+           stats_df <- PerformanceAnalytics::table.AnnualizedReturns(rets, scale=12, geometric=T,
+                                                                     digits = digits + 2)
          },
          quarters = {
-           stats_df <- PerformanceAnalytics::table.AnnualizedReturns(rets, scale=4, geometric=T)
+           stats_df <- PerformanceAnalytics::table.AnnualizedReturns(rets, scale=4, geometric=T,
+                                                                     digits = digits + 2)
          },
          years = {
-           stats_df <- PerformanceAnalytics::table.AnnualizedReturns(rets, scale=1, geometric=T)
+           stats_df <- PerformanceAnalytics::table.AnnualizedReturns(rets, scale=1, geometric=T,
+                                                                     digits = digits + 2)
          }, {
            # Default:  stop
            stop('Value of argument on (to scale) is invalid: ', on)
          }
   )
 
-  # Compute all drawdowns
-  all_dd     <- xtsdrawdowns(rets, top = top, digits = (digits + 2))
+  # Compute Ulcer Performance Index
+  upi      <- as.data.frame(t(ulcerperformance(rets, type = "rets")))
+  row.names(upi) <- "Ulcer Perf. Index"
 
+  # Convert returns to percent if enabled
+  if(percent) {
+    stats_df[1:2, ] <- 100 * stats_df[1:2, ]
+    row.names(stats_df)[1:2] <- paste(row.names(stats_df)[1:2], "(%)")
+  }
+
+  # Compute all drawdowns
+  all_dd <- xtsdrawdowns(rets, top = top, digits = (digits + 2), percent = percent)
 
   #  Row bind to build the final dataframe
   rownames(stats_df)[3] <- "Annualized Sharpe"
   stats_df2 <- rbind(stats_df[1, , drop = FALSE],
                      all_dd, stats_df[2:3, , drop = FALSE ])
 
-  # If required, convert all rows to percent except last one
-  if(percent){
-    Nm1                        <- nrow(stats_df2) - 1
-    stats_df2[1:Nm1, ]         <- round(stats_df2[1:Nm1, ] * 100, digits)
-    rownames(stats_df2)[1:Nm1] <- paste(rownames(stats_df2)[1:Nm1], "(%)")
-
-  }
-
   #-------------------------------------------------
   # Add MAR ratio
   #-------------------------------------------------
-  mar           <- -stats_df2[1, , drop = FALSE] / stats_df2[2, , drop = FALSE]
-  #mar           <- round(mar, digits = digits)
+  mar           <- -stats_df2["Annualized Return", , drop = FALSE] /
+    stats_df2["Max. Drawdown", , drop = FALSE]
   rownames(mar) <- "MAR"
 
   #-------------------------------------------------
@@ -177,16 +197,79 @@ perf_df <- function(rets, on = "days", percent = TRUE, digits = 2, top = 3) {
   posroll   <- t(as.data.frame(positives / totals * 100))
   rownames(posroll) <- "Pos. Rolling Years (%)"
 
+
   #-------------------------------------------------
   # Bind then round all quantities to digits
   #-------------------------------------------------
-  stats_df2 <- rbind(stats_df2, mar, posroll)
-  stats_df2     <- round(stats_df2, digits = digits)
+  stats_df2 <- rbind(stats_df2, mar, upi, posroll)
+  stats_df2 <- round(stats_df2, digits = digits)
 
   return(stats_df2)
 
 }
 
+
+
+
+#-------------------------------------------------------------------
+#' Calculate the Ulcer Performance Index of equity curves
+#'
+#' Calculates the Ulcer Performance Index of one or multiple
+#' equity curves provided as an xts matrix.
+#'
+#' UPi is implemented using the formula described in the
+#' Wikipedia article "Ulcer Index" and UPI.
+#'
+#' @param data  An xts matrix of at least one equity curve.
+#'
+#' @param type  Specifies whether returns ("rets") or an equity
+#'              curve ("ec") is provided for the data.
+#'
+#' @return Returns the Ulcer Performance Index for each
+#'         equity curve provided.
+#'
+#' @export
+#-------------------------------------------------------------------
+ulcerperformance <- function(data, type = "ec") {
+
+  #----------------------------------------------------------------
+  # Normalize equity curves, calculate CAGR and rets
+  #----------------------------------------------------------------
+  if(type == "ec") {
+    ec   <- data[complete.cases(data), ]
+    ec[] <- apply(ec, 2, function(x) x / rep(x[1], length(x)))
+
+    rets <- ROC(ec, type = "discrete")
+    rets[is.na(rets)] <- 0
+
+  } else {
+    ec   <- cumprod_na(1 + data)
+    rets <- data
+  }
+
+  N    <- nrow(ec)
+  cagr <- (as.numeric(last(ec))/as.numeric(first(ec)))^(252/N) - 1
+
+  #----------------------------------------------------------------
+  # Calculate the cummax of each equity curve
+  #----------------------------------------------------------------
+  cmax    <- ec
+  cmax[]  <- apply(cmax, 2, cummax)
+
+  #----------------------------------------------------------------
+  # Subtract the ec from cmax to get the daily drawdown matrix
+  #----------------------------------------------------------------
+  dailyDD <- ec - cmax
+
+  #----------------------------------------------------------------
+  # Calculate Ulcer index and UPI
+  #----------------------------------------------------------------
+  ulcer   <- apply(dailyDD, 2, function(x) sqrt(sum(x*x)/N))
+  upi     <- cagr / ulcer
+
+  return(upi)
+
+}
 
 #----------------------------------------------------------------------------------
 #  FUNCTION xtsdrawdowns
@@ -194,24 +277,44 @@ perf_df <- function(rets, on = "days", percent = TRUE, digits = 2, top = 3) {
 #  This function is not exported
 #  It is also slow because it uses table.Drawdowns
 #----------------------------------------------------------------------------------
-xtsdrawdowns <- function(rets, top = top, digits = 4) {
-  nc <- ncol(rets)
-  df <- data.frame(matrix(NA, nrow=top, ncol=nc), row.names=paste("Drawdown", 1:top))
-  colnames(df) <- colnames(rets)
+xtsdrawdowns <- function(rets, top = top, digits = 4, percent = TRUE) {
+  nc    <- ncol(rets)
 
-  # If only MDD needed, then use xtsmdd, otherwise loop using table.Drawdowns
-  if(top == 1) {
-    df <- xtsmdd(rets, digits = digits)
-  } else {
-    for(i in 1:nc) {
-      x       <- table.Drawdowns(rets[, i], top = top, digits = digits)
-      df[, i] <- c(x$Depth, rep(0, top - length(x$Depth)))
-    }
-    rownames(df)[1] <- "Max. Drawdown"
+  #------------------------------------------------------
+  # Set up the DD and DDlength containers
+  #------------------------------------------------------
+  df                 <- data.frame(matrix(NA, nrow=top, ncol=nc),
+                                   row.names=paste("Drawdown", 1:top))
+  colnames(df)       <- colnames(rets)
+  rownames(df)[1]    <- "Max. Drawdown"
+
+  dflen              <- data.frame(matrix(NA, nrow=top, ncol=nc),
+                                   row.names=paste("Drwdn", 1:top, "Days"))
+  colnames(dflen)    <- colnames(rets)
+  rownames(dflen)[1] <- "Max. Drwdn Days"
+
+  #------------------------------------------------------
+  # Loop through each column and extract dd and length
+  #------------------------------------------------------
+  for(i in 1:nc) {
+    x          <- table.Drawdowns(rets[, i], top = top, digits = digits)
+    df[, i]    <- c(x$Depth,  rep(0, top - length(x$Depth)))
+    dflen[, i] <- c(x$Length, rep(0, top - length(x$Length)))
   }
 
+  #------------------------------------------------------
+  # Return dfall, interlacing df with dflen
+  #------------------------------------------------------
+  if(percent) {
+    df <- 100 * df
+    row.names(df) <- paste(row.names(df), "(%)")
+  }
 
-  return(df)
+  dfall  <- NULL
+  for(i in 1:nrow(df)) dfall <- rbind(dfall, df[i, ], dflen[i, ])
+
+  return(dfall)
+
 }
 
 
@@ -257,6 +360,7 @@ xtsmdd <- function(rets, digits = 4) {
 #'
 #' @return Returns a data frame of CAGR
 #' @export
+#----------------------------------------------------------------------------------
 xtscagr <- function(ec) {
 
   freq = periodicity(ec)
@@ -322,6 +426,14 @@ plot_performance <- function(prices, type = "table", main = "Performance Summary
   # prices <- xtsbind(xts_data[, c(1,4,8)], xts_data[, 1:5])
   # prices <- xts_data[, 1:8, drop = FALSE]
 
+  # ########  For testing  #######
+  # library(xtsanalytics)
+  # prices = xts_data[, 1:4]
+  # type   = "table"
+  # main   = "Performance Summary"
+  # log    = "y"
+  #
+  # #####################################
 
   op <- par(no.readonly = TRUE)
   switch(type,
@@ -350,26 +462,26 @@ plot_performance <- function(prices, type = "table", main = "Performance Summary
                  cex <- 0.75
 
 
-           xtsplot(prices, main = main, log = log, ...)
-           #xtsplot(prices, main = main, log = log)
+           #xtsplot(prices, main = main, log = log, hline = 1.0, ...)
+           xtsplot(prices, main = main, log = log)
 
-           pf <- perfstats(prices, plotout = FALSE, top = 3)
+           pf <- perfstats(prices, plotout = FALSE, top = 3, digits = 2, percent = TRUE)
            print(pf)
 
-           textplot(pf[1:4,, drop = FALSE], wrap.rownames = 23, cex = cex,
-                    col.rownames=c("darkgreen", "red", "grey40", "grey40" ),
+           panel1_names <- c("Annualized Return (%)", "Max. Drawdown (%)", "Max. Drwdn Days",
+                             "Drawdown 2 (%)", "Drwdn 2 Days")
+
+           panel2_names <- c("Annualized Sharpe", "Annualized Std Dev (%)", "MAR",
+                             "Ulcer Perf. Index", "Pos. Rolling Years (%)")
+
+           textplot(pf[panel1_names,, drop = FALSE], wrap.rownames = 23, cex = cex,
+                    col.rownames=c("darkgreen", "red", "grey40", "red", "grey40" ),
                     cmar = 1.0, rmar = 0.1)
-           textplot(pf[c(6, 5, 7, 8),, drop = FALSE], wrap.rownames = 23,
-                    col.rownames=c("darkgreen", "red", "darkgreen", "grey40" ),
+           textplot(pf[panel2_names,, drop = FALSE], wrap.rownames = 23,
+                    col.rownames=c("darkgreen", "red", "darkgreen", "darkgreen", "darkgreen" ),
                     cmar = 1.0, rmar = 0.1, cex = cex)
 
 
-           # textplot(pf[1:4,, drop = FALSE], wrap.rownames = 23, mar = c(0.1, 0.1, 0, 3.5),
-           #          col.rownames=c("darkgreen", "red", "grey40", "grey40" ),
-           #          cmar = 1.0, rmar = 0.1)
-           # textplot(pf[c(6, 5, 7, 8),, drop = FALSE], wrap.rownames = 23,
-           #          col.rownames=c("darkgreen", "red", "darkgreen", "grey40" ),
-           #          cmar = 1.0, rmar = 0.1, mar = c(0.1, 0.1, 0, 3.5))
          },
          curves = {
            #-------------------------------------------------------------
@@ -386,7 +498,7 @@ plot_performance <- function(prices, type = "table", main = "Performance Summary
 
            col  <- make_colors(n = ncol(prices), type = "lines")
            xtsplot(prices, col = names(col), main = main, log = log, cex.main = 1.5,
-                   legend = "topleft", ...)
+                   legend = "topleft", hline = 1.0, ...)
            xtsplot(mom252, hline = 0, main = "12 Months Rolling Returns",
                    norm = FALSE, ylab = "Percent", xlab = "Rolling Performance",
                    legend = "topleft", col = names(col))

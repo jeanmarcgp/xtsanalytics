@@ -168,21 +168,25 @@ add_bestfeature <-  function(base_set, feature_list, train_set, val_set, Nrepeat
                              meritFUNpar = list(long_thres = 0, short_thres = 0)) {
 
   # ##########  For code testing only  ###########
-  # train_set  = airquality[1:110, ]
-  # train_set  = train_set[complete.cases(train_set), ]
-  # val_set    = airquality[111:nrow(airquality), ]
-  # val_set    = val_set[complete.cases(val_set), ]
+  # library(xtsanalytics)
+  # base_set          = c("PQCAGRLongNRank", "PERank", "PQCAGRShortNRank")
+  # feature_list      = c("Perc52WkHiRank", "PQMaxNDayRetRank")
+  # train_set         = Earnings[1:3000, c("Ret1", base_set, feature_list)]
+  # val_set           = Earnings[3001:3500, c("Ret1", base_set, feature_list)]
   # Nrepeat    = 2
-  # mlalgo     = "h2o_rf"
+  # mlalgo     = "xgboost"
+  # mlpar      = pad_mlpar(mlalgo = mlalgo)
   #
-  # feature_list = colnames(train_set)[2:6]
-  # base_set     = NULL  # colnames(train_set)[4]
-  # mlpar      = list(mtry = 1, ntree = 100)
   # meritFUN   = "trading_returns"
-  # meritFUNpar = list(long_thres = 40, short_thres = -75)
-  # h2o.init(nthreads = -1)
-  # ###################
+  # meritFUNpar = list(long_thres = 0.005, short_thres = -75)
+  #
+  # ##############################
 
+  #--------------------------------------------------------
+  # Clean up the training and validation sets from NAs
+  #--------------------------------------------------------
+  train_set <- train_set[complete.cases(train_set), ]
+  val_set   <- val_set[complete.cases(val_set), ]
 
   #-------------------------------------------
   # Convert feature lists to vectors

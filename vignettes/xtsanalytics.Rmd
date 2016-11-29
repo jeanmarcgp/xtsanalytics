@@ -9,42 +9,27 @@ vignette: >
   \usepackage[utf8]{inputenc}
 ---
 
-The **xtsanalytics package** provides a set of function for analysis and development of investment strategies. The package includes functions in these general categories:
+The **xtsanalytics package** provides a set of function to analyze and develop investment strategies, including:
 
 - General purpose functions for data analysis and manipulation of xts objects
 - Several types of xts plotting and visualization functions
-- Features and indicator generating functions, suitable for machine learning modeling
+- Features and indicator generating functions, suitable for build machine learning models
 - Functions to explore the autocorrelation of returns, including of higher moments
 - A random forest walk-forward optimization system to make better asset returns predictions
-- A portfolio optimization set of functions to complement package **PortfolioAnalytics**
+- A set of portfolio optimization functions to augment package **PortfolioAnalytics**
 
 
-The package also leverages and extends several finance related packages.  These packages should be installed in your R installation since xtsanalytics assumes their availability:
+The package also leverages and extends several finance related packages.  These packages should be installed since **xtsanalytics** requires them.
 
-- quantmod (itself requiring xts and zoo)
-- PerformanceAnalytics
-- fTrading
-- gridExtra
-- RcolorBrewer
-- stringr
-- randomForests
-- Rcpp
 
 
 ## statfolio data structure and Walk-Forward Optimization
 
-xtsanalytics makes extensive use of the xts data structure.  In addition, a new data structure
-was created to easily create statistical equity curves of a portfolio built using Walk-Forward
-optimization (WFO).  This is called the statfolio.  There may be different classes of statfolio
-depending on which function was used to generate it.  For example, if function **optimize_statfolio()**
-was used, then the resulting statfolio is of class "optimize.portfolio.rebalancing".
+xtsanalytics makes extensive use of the xts data structure.  In addition, a new data structure is created to easily build statistical equity curves of a portfolio
+using Walk-Forward optimization (WFO).  This is called the statfolio data structure.  
+There may be different classes of statfolio depending on which function was used to generate it.  For example, function **optimize_statfolio()** creates a statfolio of class "optimize.portfolio.rebalancing".
 
-WFO optimizes an equity curve at a series of specific points in time using a rolling window.  For
-example, a typical use would be to optimize monthly, at the end of each month.  In doing so, the
-data window used is N days up to and including the WFO date, resulting in an equity curve up to the
-current WFO date.  The following month, the same is repeated to generate the section of equity curve
-from the previous WFO date up to and including the current WFO date. For example, for a 10 year equity 
-curve, this would result in 10 years * 12 months = 120 WFO optimizations if done monthly.  Each of 
+WFO optimizes an equity curve at a series of specific points in time using a rolling window.  For example, a typical use would be to optimize monthly, at the end of each month.  In doing so, the data window used is N days up to and including the WFO date, resulting in an equity curve up to the current WFO date.  The following month, the same is repeated to generate the section of equity curve from the previous WFO date up to and including the current WFO date. For example, for a 10 year equity curve, this would result in 10 years * 12 months = 120 WFO optimizations if done monthly.  Each of 
 these blocks of time (between two consecutive WFO dates) can be used to create a subfolio.
 
 A subfolio consists of multiple optimizations (or models) performed between two consecutive WFO dates.
