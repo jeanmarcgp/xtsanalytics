@@ -67,14 +67,14 @@
 perfstats <- function(data, on = 'days', plotout = TRUE, value = TRUE, percent = TRUE,
                       digits = 2, top = 3, main = "Performance Summary",
                       scaling = "auto", title_size = "auto", ...) {
-#
-#   #######################################
-#   ######  For development
-#   library(xtsanalytics)
-#   data = xts_data["2008/2014", 1:4]
-#   on   = "days";  plotout = TRUE; value = TRUE; percent = TRUE; digits = 2
-#   top  = 3; main = "summary"; scaling = "auto"; title_size = "auto"
-#   #######################################
+
+  # #######################################
+  # ######  For development
+  # library(xtsanalytics)
+  # data = xts_data["2008/2014", 1] #:4]
+  # on   = "days";  plotout = TRUE; value = TRUE; percent = TRUE; digits = 2
+  # top  = 3; main = "summary"; scaling = "auto"; title_size = "auto"
+  # #######################################
 
   # Get the returns from the equity curves
   rets <- ROC(data, type="discrete")
@@ -124,7 +124,7 @@ perf_df <- function(rets, on = "days", percent = TRUE, digits = 2, top = 3) {
 
   # ################  Code for testing   ##################
   # library(xtsanalytics)
-  # rets  = ROC(xts_data[, 1:4], type = "discrete")
+  # rets  = ROC(xts_data[, 1:2], type = "discrete")
   # rets  = rets[complete.cases(rets),]
   # on    = "days"
   # percent = TRUE
@@ -278,6 +278,18 @@ ulcerperformance <- function(data, type = "ec") {
 #  It is also slow because it uses table.Drawdowns
 #----------------------------------------------------------------------------------
 xtsdrawdowns <- function(rets, top = top, digits = 4, percent = TRUE) {
+
+  # ############# for code testing  ############
+  # ################  Code for testing   ##################
+  # library(xtsanalytics)
+  # rets  = ROC(xts_data[, 1], type = "discrete")
+  # rets  = rets[complete.cases(rets),]
+  # on    = "days"
+  # percent = TRUE
+  # digits  = 2
+  # top     = 3
+  #
+  # ##############
   nc    <- ncol(rets)
 
   #------------------------------------------------------
@@ -311,7 +323,7 @@ xtsdrawdowns <- function(rets, top = top, digits = 4, percent = TRUE) {
   }
 
   dfall  <- NULL
-  for(i in 1:nrow(df)) dfall <- rbind(dfall, df[i, ], dflen[i, ])
+  for(i in 1:nrow(df)) dfall <- rbind(dfall, df[i, , drop = FALSE ], dflen[i, , drop = FALSE])
 
   return(dfall)
 

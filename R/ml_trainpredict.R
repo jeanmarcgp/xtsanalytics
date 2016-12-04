@@ -35,7 +35,10 @@
 #'                    and prediction.  Currently supported algorithms include:
 #'                    "rf", "h2o.rf", and "xgboost".
 #'
-#' @return Returns a matrix with the following 3 columns and the same number of
+#' @param mlpar       A list containing the parameters required by the ML algorithm
+#'                    selected by mlalgo.  If NULL, then
+#'
+#' @return Returns a dataframe with the following 3 columns and the same number of
 #'         rows as the validation set provided.  Column 1, named "predict"
 #'         contains the predicted value.  Column 2 contains the actual
 #'         target value as provided by ycol in the validation set.  Column 3
@@ -45,7 +48,7 @@
 #' @export
 #-----------------------------------------------------------------------------------
 ml_trainpredict <- function(train_set = NULL, valid_set = NULL, ycol = 1,
-                            IDinfo = NULL, mlalgo = "xgboost") {
+                            IDinfo = NULL, mlalgo = "xgboost", mlpar = NULL) {
 
 
   # ###########  Code for testing  ##########
@@ -74,6 +77,12 @@ ml_trainpredict <- function(train_set = NULL, valid_set = NULL, ycol = 1,
 
   traindata <- train_set
   validdata <- valid_set
+
+  #------------------------------------------------------------------
+  # Ensure that mlpar is padded by its defaults if a parameter is
+  # not user specified
+  #------------------------------------------------------------------
+  mlpar <- pad_mlpar(mlalgo = mlalgo, mlpar = mlpar)
 
   switch(mlalgo,
          h2o.rf = {

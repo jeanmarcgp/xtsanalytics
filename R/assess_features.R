@@ -119,7 +119,9 @@ assess_features <- function(features, train_set, val_set, Nrepeat = 1, mlalgo = 
 
     yhat <- ml_trainpredict(train_set = traindata,
                             valid_set = valdata,
-                            ycol = 1, mlalgo = mlalgo)
+                            ycol      = 1,
+                            mlalgo    = mlalgo,
+                            mlpar     = mlpar)
 
 
     predmat <- cbind(yhat[, 1, drop = FALSE], valdata[, 1, drop = FALSE])

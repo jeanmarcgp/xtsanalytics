@@ -1,7 +1,7 @@
 Package: xtsanalytics
 Type: Package
 Title: Analyze and develop predictive models for investment portfolios
-Version: 0.1.01
+Version: 0.10.02
 Date: 2016-11-29
 Authors@R: person("Patenaude", "Jean-Marc", , "jeanmarc@dimensionalresearch.com", c("aut", "cre"))
 Description: A set of functions to analyze investments, develop predictive models using

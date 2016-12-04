@@ -5,7 +5,7 @@
 \title{Train and predict a Machine Learning model}
 \usage{
 ml_trainpredict(train_set = NULL, valid_set = NULL, ycol = 1,
-  IDinfo = NULL, mlalgo = "xgboost")
+  IDinfo = NULL, mlalgo = "xgboost", mlpar = NULL)
 }
 \arguments{
 \item{train_set}{The training set use for training the model}
@@ -31,9 +31,12 @@ the dataframe returned).}
 \item{mlalgo}{The machine learning algorithm to use during training
 and prediction.  Currently supported algorithms include:
 "rf", "h2o.rf", and "xgboost".}
+
+\item{mlpar}{A list containing the parameters required by the ML algorithm
+selected by mlalgo.  If NULL, then}
 }
 \value{
-Returns a matrix with the following 3 columns and the same number of
+Returns a dataframe with the following 3 columns and the same number of
         rows as the validation set provided.  Column 1, named "predict"
         contains the predicted value.  Column 2 contains the actual
         target value as provided by ycol in the validation set.  Column 3
