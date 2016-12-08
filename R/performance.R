@@ -259,7 +259,7 @@ ulcerperformance <- function(data, type = "ec") {
   #----------------------------------------------------------------
   # Subtract the ec from cmax to get the daily drawdown matrix
   #----------------------------------------------------------------
-  dailyDD <- ec - cmax
+  dailyDD <- (ec - cmax) / cmax
 
   #----------------------------------------------------------------
   # Calculate Ulcer index and UPI

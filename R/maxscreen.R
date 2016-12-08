@@ -126,17 +126,17 @@ maxscreen <- function(prices, maxweights = 0.5, volfeature = "sd252",
                          order.by = index(prices))
 
   #-------------------------------------------------------------------
-  # Reduce each weight in volwts if volatility exceeds volthresh
+  # Risk Parity:  Reduce each weight in volwts if vol. > volthresh
   #-------------------------------------------------------------------
   normwts    <- volwts
   normwts[]  <- apply(volmat, 2, function(x) {sapply(x, function(y) min(1, volthresh / y))})
   volwts2    <- volwts * normwts
 
-  sprint("volwts2")
-  print(head(volwts2))
+  #sprint("volwts2")
+  #print(head(volwts2))
 
   #-------------------------------------------------------------------
-  # Calculate normalized annualized momentum
+  # Calculate momentum, annualized
   #-------------------------------------------------------------------
   featnum    <- as.numeric(stringr::str_extract(momfeature, "[[:digit:]]+"))
   scfactor   <- 252 / featnum
@@ -144,11 +144,11 @@ maxscreen <- function(prices, maxweights = 0.5, volfeature = "sd252",
   mommat     <- (mommat + 1)^scfactor - 1
   mommat     <- na.locf(mommat, na.rm = TRUE)
 
-  sprint("head of mommat:")
-  print(head(mommat))
+  #sprint("head of mommat:")
+  #print(head(mommat))
 
   #-------------------------------------------------------------------
-  # Calculate the relative momentum rank, excluding the cashasset
+  # Calculate relative momentum rank, excluding cashasset
   #-------------------------------------------------------------------
   mommat_nc  <- mommat[, colnames(mommat) != cashname]
 
@@ -160,38 +160,44 @@ maxscreen <- function(prices, maxweights = 0.5, volfeature = "sd252",
   rankmat    <- cbind(mommat[, cashasset], rankmat)
   rankmat[, 1] <- 0
 
-  sprint("rankmat:")
-  print(head(rankmat))
+  #sprint("rankmat:")
+  #print(head(rankmat))
 
-  sprint("rankthres = %s", rankthresh)
+  #sprint("rankthres = %s", rankthresh)
 
 
   #------------------------------------------------------------------------------
-  # Compute the absolute momentum filter and the relative momemtum
-  # rank filter using the rankthres.  relmom_b and absmom_b are booleans
+  # Compute absolute momentum filter and relative momentum rank filter
+  # using rankthres.  relmom_b and absmom_b are booleans
   # Zero out weights that don't meet the volthres minimum (absolute momentum)
   #------------------------------------------------------------------------------
-  sprint("Now doing the ifelse statements...")
+  #sprint("Now doing the ifelse statements...")
+
+  # Relative momentum filter to select only top ranking assets incl. cash
   relmom_b   <- rankmat
   relmom_b[] <- ifelse(as.numeric(rankmat) <= rankthresh, 1, 0)
-  sprint("relmom_b:")
-  print(head(relmom_b))
+  #sprint("relmom_b:")
+  #print(head(relmom_b))
 
+  # Absolute momentum filter to select only assets > momthresh
   absmom_b   <- mommat
   absmom_b[] <- ifelse(as.numeric(mommat) > momthresh, 1, 0)
-  sprint("absmom_b:")
-  print(head(absmom_b))
+  #sprint("absmom_b:")
+  #print(head(absmom_b))
 
   volwts2    <- volwts2[index(mommat), ]
-  sprint("volwts2")
-  print(head(volwts2))
+  #sprint("volwts2")
+  #print(head(volwts2))
 
-  sprint("cashasset = %s", cashasset)
+  #sprint("cashasset = %s", cashasset)
+
+  # AND logical absmom * relmom to get filtered assets, then apply volwts2
   volwts3    <- volwts2
   volwts3[]  <- volwts2 * absmom_b * relmom_b
 
-  sprint("volwts3, before ifelse:")
-  print(head(volwts3))
+  #sprint("volwts3, before ifelse:")
+  #print(head(volwts3))
+  # Get rid of assets with weights < 0.01
   volwts3[]  <- ifelse(as.numeric(volwts3) < 0.01, 0.0, volwts3)  # Reduce residuals to 0.0
 
   #------------------------------------------------------------------
@@ -205,8 +211,8 @@ maxscreen <- function(prices, maxweights = 0.5, volfeature = "sd252",
   #------------------------------------------------------------------
   volwts3    <- volwts3[, cnames]
 
-  sprint(">>>>>>>>>>>>>>>>>> tail of volwts3:")
-  print(head(volwts3))
+  #sprint(">>>>>>>>>>>>>>>>>> tail of volwts3:")
+  #print(head(volwts3))
 
   return(volwts3)
 
