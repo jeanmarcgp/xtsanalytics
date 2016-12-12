@@ -1,42 +1,10 @@
 
 ####################################################################################
-# FILE maxscreen.R
+# FILE riskparity_screen.R
 #
 #
 #
 ####################################################################################
-#######################################################
-#
-# OBSERVATIONS
-# ============
-#  . Improve by adjusting the maxbox by volatility of the asset
-#    This would like the position in IXIC in late 1999 for example.
-#  . SHY has a high Sharpe ratio but low return.
-#
-#  . FIRST RULE: maxbox screen can first adjust the asset max
-#    based on recent volatility.  this will lower the max exposure
-#    during speculative periods for that asset.
-#
-#  . SECOND RULE: absmom. The pre-screen outputs a maxbox xts.  It can
-#    use the FIRST rule max box (adjust for speculation) as a first
-#    step.  In addition, it can zero out those assets that don't meet
-#    a minimum annualized rolling momentum (absolute momentum) to
-#    ensure the universe only contains momentum assets.  An exception
-#    needs to be made for SHY or VSGBX as the cash position.
-#
-#  . THIRD RULE: The assets meeting the absolute momentum threshold can
-#    also be ranked by their momentum.  The top K are taken.  K can be
-#    the same as N (total assets in universe), in which case all assets
-#    passing the absmom threshold are kept.  Alternatively, K < N so
-#    as to keep the universe a manageable number of assets.
-#
-#
-#  LAST, a write a short script to analyze the long term correlation of
-#  various assets:  1mo, 3mo, 1yr, 3yrs, 5yrs.  Compute the rolling mom,
-#  then the correlation of said asset vs. SP500.  Identify a basket of
-#  assets with good long term returns AND low correlations.  XLE, VGPMX?
-#
-###################################################################
 #
 #' Volatility adjusted momentum screen for optimizing portfolios
 #'
@@ -60,9 +28,9 @@
 #'                    the prices matrix using function make_feature.
 #'                    Default is sd252.
 #'
-#' @param volthresh   The volatility threshold at which the asset weight
+#' @param riskparity  The volatility threshold at which the asset weight
 #'                    will be scaled back, according to the formula
-#'                    min(1, volthresh / asset_volatility), where
+#'                    min(1, riskparity / asset_volatility), where
 #'                    asset_volatility is the result of the volfeature
 #'                    feature.
 #'
@@ -84,18 +52,18 @@
 #'
 #' @export
 #--------------------------------------------------------------------
-maxscreen <- function(prices, maxweights = 0.5, volfeature = "sd252",
-                      volthresh = 0.12, momfeature = "mom252",
-                      momthresh = 0.05, cashasset = 1,
-                      rankthresh = ncol(prices)) {
+riskparity_screen <- function(prices, maxweights = 0.5, volfeature = "sd252",
+                              riskparity = 0.12, momfeature = "mom252",
+                              momthresh = 0.05, cashasset = 1,
+                              Nassets = ncol(prices)) {
 
   # ##### Code for testing function only  ####
   # library(xtsanalytics)
   # prices     = xts_data[, c(1:2, 4:6)]   # ensure no NAs in prices
   # maxweights = c(0.5, 0.4, 0.3, 0.4, 0.6)
   # volfeature = "sd63"
-  # volthresh  = 0.12
-  # rankthresh = 4
+  # riskparity  = 0.12
+  # Nassets = 4
   # momfeature = "mom126"
   # momthresh  = 0.13
   # cashasset  = "VSGBX"
@@ -126,10 +94,10 @@ maxscreen <- function(prices, maxweights = 0.5, volfeature = "sd252",
                          order.by = index(prices))
 
   #-------------------------------------------------------------------
-  # Risk Parity:  Reduce each weight in volwts if vol. > volthresh
+  # Risk Parity:  Reduce each weight in volwts if vol. > riskparity
   #-------------------------------------------------------------------
   normwts    <- volwts
-  normwts[]  <- apply(volmat, 2, function(x) {sapply(x, function(y) min(1, volthresh / y))})
+  normwts[]  <- apply(volmat, 2, function(x) {sapply(x, function(y) min(1, riskparity / y))})
   volwts2    <- volwts * normwts
 
   #sprint("volwts2")
@@ -163,7 +131,7 @@ maxscreen <- function(prices, maxweights = 0.5, volfeature = "sd252",
   #sprint("rankmat:")
   #print(head(rankmat))
 
-  #sprint("rankthres = %s", rankthresh)
+  #sprint("rankthres = %s", Nassets)
 
 
   #------------------------------------------------------------------------------
@@ -175,7 +143,7 @@ maxscreen <- function(prices, maxweights = 0.5, volfeature = "sd252",
 
   # Relative momentum filter to select only top ranking assets incl. cash
   relmom_b   <- rankmat
-  relmom_b[] <- ifelse(as.numeric(rankmat) <= rankthresh, 1, 0)
+  relmom_b[] <- ifelse(as.numeric(rankmat) <= Nassets, 1, 0)
   #sprint("relmom_b:")
   #print(head(relmom_b))
 

@@ -6,7 +6,7 @@
 \usage{
 perfstats(data, on = "days", plotout = TRUE, value = TRUE,
   percent = TRUE, digits = 2, top = 3, main = "Performance Summary",
-  scaling = "auto", title_size = "auto", ...)
+  scaling = "auto", title_size = "auto", ulcerthresh = 0, ...)
 }
 \arguments{
 \item{data}{An xts matrix of equity curves, each column being one equity curve.}
@@ -38,6 +38,12 @@ number of columns in the xts data matrix.}
 \item{title_size}{Title scaling factor passed on to plot_df.  Default is "auto",
 which calculates a reasonable value based on the number of
 coumns in the xts data matrix.}
+
+\item{ulcerthresh}{The drawdown minimum threshold used in the Ulcer Performance
+Index calculation for each period's return to be considered in the
+calculation.  In other words, drawdowns smaller than this number
+do not count.  Default is zero and it may be expressed as
+either a positive or negative number.}
 
 \item{...}{Additional arguments passed on to plot_df.  For example, the title
 text and size, and footnote size may be modified using this.}

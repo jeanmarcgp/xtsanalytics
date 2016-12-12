@@ -5,11 +5,13 @@
 #  Functions used to analyze the performance of portfolios.
 #
 #
+#  Add DDthresh to perfstats options.
+#
 #  LIST OF FUNCTIONS:
 #  ------------------
 #
 #  .perfstats         Generates performance stats from equity curves
-#  .ulcerperformance  Ulcer performance index.
+#  .ulcerindex        A rewrite of the ulcer index to be faster.
 #  .xtsdrawdowns      Multiple drawdowns
 #  .xtsmdd            Efficiently computes the maximum drawdown from returns
 #  .xtsCAGR           Efficiently computes the CAGR from an xts of returns
@@ -54,6 +56,12 @@
 #'                    which calculates a reasonable value based on the number of
 #'                    coumns in the xts data matrix.
 #'
+#' @param ulcerthresh   The drawdown minimum threshold used in the Ulcer Performance
+#'                    Index calculation for each period's return to be considered in the
+#'                    calculation.  In other words, drawdowns smaller than this number
+#'                    do not count.  Default is zero and it may be expressed as
+#'                    either a positive or negative number.
+#'
 #' @param ...      Additional arguments passed on to plot_df.  For example, the title
 #'                 text and size, and footnote size may be modified using this.
 #'
@@ -66,7 +74,7 @@
 #----------------------------------------------------------------------------------
 perfstats <- function(data, on = 'days', plotout = TRUE, value = TRUE, percent = TRUE,
                       digits = 2, top = 3, main = "Performance Summary",
-                      scaling = "auto", title_size = "auto", ...) {
+                      scaling = "auto", title_size = "auto", ulcerthresh = 0, ...) {
 
   # #######################################
   # ######  For development
@@ -81,7 +89,8 @@ perfstats <- function(data, on = 'days', plotout = TRUE, value = TRUE, percent =
   rets <- rets[complete.cases(rets), ]
 
   # Calculate the performance statistics dataframe
-  stats_df2 <- perf_df(rets, on, percent, digits, top)
+  stats_df2 <- perf_df(rets = rets, on = on, percent = percent,
+                       digits = digits, top = top, ulcerthresh = ulcerthresh)
 
   nc        <- ncol(rets)
 
@@ -119,7 +128,7 @@ perfstats <- function(data, on = 'days', plotout = TRUE, value = TRUE, percent =
 #
 # This function is not exported
 #---------------------------------------------------------------------------------
-perf_df <- function(rets, on = "days", percent = TRUE, digits = 2, top = 3) {
+perf_df <- function(rets, on = "days", percent = TRUE, digits = 2, top = 3, ulcerthresh = 0) {
 
 
   # ################  Code for testing   ##################
@@ -130,8 +139,9 @@ perf_df <- function(rets, on = "days", percent = TRUE, digits = 2, top = 3) {
   # percent = TRUE
   # digits  = 2
   # top     = 3
-  #
-  # #######################################################
+  # ulcerthresh = 0
+
+  #######################################################
 
 
   # Compute basic performance stats
@@ -161,14 +171,21 @@ perf_df <- function(rets, on = "days", percent = TRUE, digits = 2, top = 3) {
          }
   )
 
-  # Compute Ulcer Performance Index
-  upi      <- as.data.frame(t(ulcerperformance(rets, type = "rets")))
-  row.names(upi) <- "Ulcer Perf. Index"
+  # Compute Ulcer Index
+  ulcer    <- as.data.frame(t(ulcerindex(rets, type = "rets",
+                                         on = on, DDthresh = ulcerthresh)))
+  row.names(ulcer) <- "Ulcer Index"
+
+  cagr     <- stats_df[1, ]
+  upi      <- cagr / ulcer
+  row.names(upi) <- "Ulcer Performance Index"
 
   # Convert returns to percent if enabled
   if(percent) {
     stats_df[1:2, ] <- 100 * stats_df[1:2, ]
     row.names(stats_df)[1:2] <- paste(row.names(stats_df)[1:2], "(%)")
+    ulcer  <- ulcer * 100
+    row.names(ulcer) <- paste(row.names(ulcer), "(%)")
   }
 
   # Compute all drawdowns
@@ -201,7 +218,7 @@ perf_df <- function(rets, on = "days", percent = TRUE, digits = 2, top = 3) {
   #-------------------------------------------------
   # Bind then round all quantities to digits
   #-------------------------------------------------
-  stats_df2 <- rbind(stats_df2, mar, upi, posroll)
+  stats_df2 <- rbind(stats_df2, mar, ulcer, upi, posroll)
   stats_df2 <- round(stats_df2, digits = digits)
 
   return(stats_df2)
@@ -212,25 +229,44 @@ perf_df <- function(rets, on = "days", percent = TRUE, digits = 2, top = 3) {
 
 
 #-------------------------------------------------------------------
-#' Calculate the Ulcer Performance Index of equity curves
+#' Calculate the ulcer index of equity curves
 #'
-#' Calculates the Ulcer Performance Index of one or multiple
+#' Calculates the ulcer index of one or multiple
 #' equity curves provided as an xts matrix.
 #'
-#' UPi is implemented using the formula described in the
-#' Wikipedia article "Ulcer Index" and UPI.
+#' The ulcer index is implemented according to the formula
+#' described in the Wikipedia article "Ulcer Index".
 #'
-#' @param data  An xts matrix of at least one equity curve.
+#' @param data      An xts matrix of at least one equity curve.
 #'
-#' @param type  Specifies whether returns ("rets") or an equity
-#'              curve ("ec") is provided for the data.
+#' @param type      Specifies whether returns ("rets") or an equity
+#'                  curve ("ec") is provided for the data.
+#'
+#' @param on        Specifies whether the data matrix is sampled
+#'                  on "days", "weeks", "months", "quarters" or "years".
+#'
+#' @param DDthresh  The drawdown minimum threshold for each
+#'                  period's return to be considered in the
+#'                  ulcer index calculation.  In other words,
+#'                  drawdowns smaller than this number do not count.
+#'                  Default is zero and may be expressed as
+#'                  either a positive or negative number.
+#'
 #'
 #' @return Returns the Ulcer Performance Index for each
 #'         equity curve provided.
 #'
 #' @export
 #-------------------------------------------------------------------
-ulcerperformance <- function(data, type = "ec") {
+ulcerindex <- function(data, type = "ec", on = "days", DDthresh = 0) {
+
+  # ####### for testing only  #####
+  # data = xts_data[, 1:4] # "SPY"]
+  # type = "ec"
+  # on   = "days"
+  # DDthresh = 0
+  # #######################
+
 
   #----------------------------------------------------------------
   # Normalize equity curves, calculate CAGR and rets
@@ -248,7 +284,15 @@ ulcerperformance <- function(data, type = "ec") {
   }
 
   N    <- nrow(ec)
-  cagr <- (as.numeric(last(ec))/as.numeric(first(ec)))^(252/N) - 1
+  #
+  # cagrfactor <- switch(on,
+  #                      days     = 252,
+  #                      weeks    = 52.18,
+  #                      months   = 12,
+  #                      quarters = 4,
+  #                      years    = 1)
+  #
+  # cagr <- (as.numeric(last(ec))/as.numeric(first(ec)))^(cagrfactor/N) - 1
 
   #----------------------------------------------------------------
   # Calculate the cummax of each equity curve
@@ -258,16 +302,21 @@ ulcerperformance <- function(data, type = "ec") {
 
   #----------------------------------------------------------------
   # Subtract the ec from cmax to get the daily drawdown matrix
+  # Zero out drawdown if less than minimum threshold.
   #----------------------------------------------------------------
-  dailyDD <- (ec - cmax) / cmax
+  dailyDD    <- (ec - cmax) / cmax
+  for(i in 1:ncol(dailyDD)) {
+    x <- as.numeric(dailyDD[, i])
+    dailyDD[, i] <- ifelse(x < -abs(DDthresh), x, 0)
+  }
 
   #----------------------------------------------------------------
   # Calculate Ulcer index and UPI
   #----------------------------------------------------------------
   ulcer   <- apply(dailyDD, 2, function(x) sqrt(sum(x*x)/N))
-  upi     <- cagr / ulcer
+ # upi     <- cagr / ulcer
 
-  return(upi)
+  return(ulcer)
 
 }
 
