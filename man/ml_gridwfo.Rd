@@ -104,7 +104,7 @@ Returns an xts matrix with indices comprising the inner merge of
 }
 }
 \description{
-Performs a grid search of multiple machine learning models at each
+Performs a grid search of machine learning models at each
 walk-forward optimization date.
 }
 \details{

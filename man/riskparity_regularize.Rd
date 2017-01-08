@@ -2,11 +2,13 @@
 % Please edit documentation in R/riskparity_regularize.R
 \name{riskparity_regularize}
 \alias{riskparity_regularize}
-\title{Screen assets and adjust max portfolio weights using risk parity regularization}
+\title{Adjust max portfolio weights using risk parity regularization}
 \usage{
-riskparity_regularize(prices, maxweights = 0.5, volfeature = "sd126",
+riskparity_regularize(prices, maxweights = 0.5, riskpar_feature = "sd126",
   riskparity = 0.12, momfeature = "mom252", momthresh = 0.05,
-  cashasset = 1, Nassets = ncol(prices))
+  reguwindow = 63, cashasset = NA, Nassets = ncol(prices),
+  wfo_span = "months", wfo_offset = 0, sellrank = 3,
+  dafaultweight = 0.35)
 }
 \arguments{
 \item{prices}{An xts matrix of asset prices.}
@@ -16,7 +18,7 @@ asset as a fraction of the total portfolio. The vector
 is recycled if not enough values are provided, or truncated
 if it is too long.  Default is 0.5 for all assets.}
 
-\item{volfeature}{The volatility feature used to calculate the risk parity
+\item{riskpar_feature}{The volatility feature used to calculate the risk parity
 maximum weight adjustment.  Risk parity in this context is
 used to equalize risk for a given asset when compared
 against its stated maximum weight.  For example, if an
@@ -26,14 +28,20 @@ is 0.15.  Then its adjusted maxweight will be
 0.3 * (0.10 / 0.15) = 0.20. Default is sd126.}
 
 \item{riskparity}{The volatility threshold at which the asset weight
-will be scaled back, according to the formula
+will be scaled back, according to the risk parity formula
 min(1, riskparity / asset_volatility), where
-asset_volatility is the current result of the volfeature
-feature, expressed as an annualized value.}
+asset_volatility is the most recent value of the
+riskpar_feature feature, expressed as an annualized value.}
 
-\item{momfeature}{}
+\item{momfeature}{The momentum feature applied to each asset for the
+relative and absolute momentum screens.}
 
-\item{momthresh}{}
+\item{momthresh}{The absolute momentum threshold below which an asset
+is automatically excluded from ownership.  Expressed as
+a fraction, not a percent.}
+
+\item{reguwindow}{The rolling window (in days) used to calculate the
+correlations at each WFO date.}
 
 \item{cashasset}{The column number or name of the cash asset.  This
 asset has a fixed weight of 1 so the optimizer can
@@ -41,38 +49,48 @@ always select it, if all other assets have a zero
 weight.  Default is column 1.}
 
 \item{Nassets}{The maximum number of assets in the portfolio at any
-                   given time, including the cash asset.  This is used
-                   to derive a rank threshold value beyond to screen the
-                   top assets at each WFO date.
+given time, including the cash asset.  This is used
+to derive a rank threshold value beyond to screen the
+top assets at each WFO date.}
 
+\item{wfo_span}{Specifies the WFO span used to generate the wfo timeframe.
+Can be the usual endpoints values including "days", "weeks",
+"months"or "quarters".  If length(wfo_span) > 1, then it is
+assumed that a vector of specific dates are provided.}
 
-                   to zero.  For example, if rankthres = 4, then the top
-                   4 highest momentum asset are included at the given date
-                   while all other assets are excluded by setting their
-                   weights to zero.  The cash asset however is always included
-                   and treated separately.  So in the above example, the top
-                   4 assets are included plus the cash asset.}
+\item{wfo_offset}{Offset in days from the wfo_span date used to adjust the
+final wfo dates.  May be positive or negative.}
 }
 \value{
-Returns a list of two xts matrices:  the first xts "maxweights" contains
-                the maximum asset weights, where the screened out asset weights
-                are set to zero. The second xts contains the adjusted momentum scores
-                (annualized) according to the following regularization function:
+Returns a list of the following items:
+
+\describe{
+  \item{\preformatted{$maxweights}}{
+     An xts matrix covering the wfo dates, and containing the maximum weights for
+     each asset at the wfo dates.
+     }
+
+  \item{\preformatted{$momscores}}{
+     An xts matrix indexed at the wfo dates, and containing the adjusted momentum values
+     regularized by the regularizing function.
+     }
+
+  \item{\preformatted{$reguscore}}{
+     An xts matrix indexed at the wfo dates containing the regularization scores for each
+     asset i.e. not multiplied by the momentum as $momscore.
+     }
+
+  \item{\preformatted{$wfodates}}{
+     A character vector of all the wfo dates used.
+     }
+  }
 }
 \description{
-This function is used to screen assets from a universe and adjust
-the weights of each assets according to certain risk parity rules,
-momentum and portfolio correlation.
-}
-\details{
-Returns an xts matrix of asset weights, modulated according to
-a set of rules.
-
-The xts matrix returned will generally start at a later time
-that the prices matrix since features are calculated from it.
-Therefore, you must ensure that it properly aligns with
-other matrices in the calling function.
-
-The first rule applied is...
+Screens assets from a universe and adjust the weights of each assets
+according to a risk parity rule.  The assets selected are the
+result of regularized momentum ranking based on raw asset momentum,
+asset correlation against the portfolio and volatility.  In addition,
+trading hysteresis is implemented to allow the use of a large universe
+while limiting the amount of period to period trading.
 }
 

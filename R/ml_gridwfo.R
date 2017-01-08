@@ -6,7 +6,7 @@
 #
 #' Walk-Forward Optimization using grid search at each optimization date
 #'
-#' Performs a grid search of multiple machine learning models at each
+#' Performs a grid search of machine learning models at each
 #' walk-forward optimization date.
 #'
 #' This approach differs from normal WFO as follows.  At each date,

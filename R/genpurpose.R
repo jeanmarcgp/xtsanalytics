@@ -23,6 +23,7 @@
 #  .sprint              Print on console using sprintf formatting
 #  .trimspaces          Trims white spaces from a string
 #  .recycle             Recycle an object to a target length
+#  .recycle_better      Recycle a vector using names and smart rules
 #  .emptyxts            Make an xts matrix with colnames
 #
 #
@@ -270,18 +271,23 @@ save_Rdata <- function(object=NULL, fname='temp', path='./') {
 
 
 #----------------------------------------------------------------------------------
-#  FUNCTION sprint
+#  FUNCTIONS sprint and sprintcat
 #'
 #' Print to console using C-like sprintf formatting.
 #'
 #' A simple function to print text and variable content on the console, using
-#' the C-like function sprintf formatting style.  Also automatically appends
-#' a carriage return at the end of the string.
+#' the C-like function sprintf formatting style.
+#'
+#' There are two versions of this function:  sprint and sprintcat.
+#' Function sprint automatically appends a carriage return at the end of
+#' the string whereas sprintcat does not.
 #'
 #' @param  string  A character string containing text and formatting style.
+#'
 #' @param  ...     Additional parameters passed to sprintf.  In most cases, these
 #'                 are the sequence of variables that are printed, provided they
 #'                 have an associated formatting in the string.
+#'
 #' @return No return value.  This function is called for its side effects
 #'         by printing on the console.
 #'
@@ -291,10 +297,20 @@ save_Rdata <- function(object=NULL, fname='temp', path='./') {
 #----------------------------------------------------------------------------------
 sprint <- function(string, ...) {
   str2 <- paste0(string, "\n")
+
   str_out <- sprintf(str2, ...)
   cat(str_out)
 
-}   ######  END sprint ######
+}   ######  END FUNCTION sprint ######
+
+#' @describeIn sprint Similar to sprint but without the carriage return
+#' @export
+sprintcat <- function(string, ...) {
+
+  str_out <- sprintf(string, ...)
+  cat(str_out)
+
+}   ######  END FUNCTION sprintcat ######
 
 
 #----------------------------------------------------------------------------------
@@ -348,6 +364,64 @@ recycle <- function(data, N) {
   Nrep    <- ceiling(N / dlen)
   outdata <- rep(data, Nrep)[1:N]
   return(outdata)
+}
+
+
+#----------------------------------------------------------------------------------
+#  FUNCTION recycle_better
+#
+#' Recycle a vector using names and smart rules
+#'
+#' @param vec       A numeric vector used for recycling.  If the vector is
+#'                  not named, then it is simply recycled N times where
+#'                  N = length(vecnames). If it is a named numeric, then
+#'                  a vector of length N is built using the default argument
+#'                  below, then those named values are inserted in the
+#'                  result.
+#'
+#' @param vecnames  The ordered names to assign to the results.
+#'
+#' @param default   The default value to pad the vector with when a named
+#'                  vec argument is provided.
+#'
+#' @return Returns a vector of length(vecnames) that is named and ordered
+#'         as vecnames.
+#'
+#' @export
+#----------------------------------------------------------------------------------
+recycle_better <- function(vec, vecnames, default = 0) {
+
+  # ######  for testing  ##########
+  # vecnames = c("SPY", "IEV", "SHY", "GLD")
+  # vec = 1
+  #
+  # ###############
+
+  if(class(vecnames) != "character") stop("vecnames must be a string!")
+  if(class(vec) != "numeric")        stop("vec must be a numeric vector!")
+
+  #--------------------------------------------------------------
+  # Recycle vec if a plain numeric (not named)
+  #--------------------------------------------------------------
+  if(is.null(names(vec))) {
+    # Recycle numeric vec and assign names
+    vec        <- recycle(vec, length(vecnames))
+    names(vec) <- vecnames
+
+  } else {
+    #------------------------------------------------------------
+    # vec is named, so pad the rest with default values
+    #------------------------------------------------------------
+    # First, get rid of names not in vecnames, if any
+    vec                 <- vec[names(vec) %in% vecnames]
+    tempvec             <- recycle(default, length(vecnames))
+    names(tempvec)      <- vecnames
+    tempvec[names(vec)] <- vec
+    vec                 <- tempvec
+  }
+
+  return(vec)
+
 }
 
 #----------------------------------------------------------------------------------

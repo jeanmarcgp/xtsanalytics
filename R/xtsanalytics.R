@@ -1,17 +1,26 @@
+################################################################################
 #
+# FILE xtsanalytics.R
 #
-# This is a dummy function to allow a help page on xtsanalytics
+################################################################################
 #
-#' xtsanalytics Package
+#' xtsanalytics: Portfolio analysis using optimization and machine learning.
 #'
 #' The xtsanalytics package provides a set of functions to analyze xts
-#' time series more effectively. It leverages other packages including
-#' quantmod, PortfolioAnalytics, PerformanceAnalytics
-#' and others. The functions provides are
-#' meant to be used in the analysis of investment strategies and portfolio
-#' optimization.
+#' time series more effectively for investment purposes. It leverages
+#' several other packages including quantmod, PortfolioAnalytics,
+#' PerformanceAnalytics and some machine learning packages including
+#' h2o and xgboost.  The package is useful for developing portfolio
+#' optimization strategies and predictive models using machine learning.
+#'
+#'
+#' @section Functions in xtsanalytics:
+#'
+#' Click on the Index below to see the list of available functions.
 #'
 #'
 #'
-#' NOTE:  The description of xtsanalytics doesn't come from here.
-#'
+#' @docType package
+#' @name xtsanalytics
+NULL
+
