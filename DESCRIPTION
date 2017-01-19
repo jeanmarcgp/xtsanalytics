@@ -1,8 +1,8 @@
 Package: xtsanalytics
 Type: Package
 Title: Portfolio Analysis using Optimization and Machine Learning.
-Version: 0.10.04
-Date: 2017-01-07
+Version: 0.10.05
+Date: 2017-01-19
 Authors@R: person("Patenaude", "Jean-Marc", , "jeanmarc@dimensionalresearch.com", c("aut", "cre"))
 Description: A set of functions to analyze investments, optimize investment portfolios
     and develop predictive models using machine learning lagorithms.
@@ -37,5 +37,5 @@ Suggests:
     h2oEnsemble,
     Rcpp,
     rmarkdown
-VignetteBuilder: knitr
 RoxygenNote: 5.0.1
+VignetteBuilder: knitr

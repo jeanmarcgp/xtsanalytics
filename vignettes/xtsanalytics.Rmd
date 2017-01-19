@@ -1,10 +1,10 @@
 ---
-title: "Package xtsanalytics"
+title: "xtsanalytics"
 author: "Jean-Marc Patenaude"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{xtsanalytics package vignette and overview}
+  %\VignetteIndexEntry{xtsanalytics package overview}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---
@@ -16,7 +16,7 @@ The **xtsanalytics package** provides a set of function to analyze and develop i
 - Features and indicator generating functions, suitable for build machine learning models
 - Functions to explore the autocorrelation of returns, including of higher moments
 - A random forest walk-forward optimization system to make better asset returns predictions
-- A set of portfolio optimization functions to augment package **PortfolioAnalytics**
+
 
 
 The package also leverages and extends several finance related packages.  These packages should be installed since **xtsanalytics** requires them.
