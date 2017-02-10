@@ -84,6 +84,7 @@ perfstats <- function(data, on = 'days', plotout = TRUE, value = TRUE, percent =
   # top  = 3; main = "summary"; scaling = "auto"; title_size = "auto"
   # #######################################
 
+  opar <- par(no.readonly = TRUE)
   # Get the returns from the equity curves
   rets <- ROC(data, type="discrete")
   rets <- rets[complete.cases(rets), ]
@@ -116,6 +117,8 @@ perfstats <- function(data, on = 'days', plotout = TRUE, value = TRUE, percent =
             foot_size = foot_size, scaling = scaling, ...)
 
   }
+
+  #par(opar)
 
   if(value) return(stats_df2)
 
@@ -496,7 +499,7 @@ plot_performance <- function(prices, type = "table", main = "Performance Summary
   #
   # #####################################
 
-  op <- par(no.readonly = TRUE)
+  # op <- par(no.readonly = TRUE)
   switch(type,
          table = {
            #-------------------------------------------------------------
@@ -504,7 +507,7 @@ plot_performance <- function(prices, type = "table", main = "Performance Summary
            #-------------------------------------------------------------
            layout(matrix(c(1, 1, 2, 3), nrow = 2, byrow = TRUE),
                   heights = c(2, 1, 1), widths = 1)
-           par(mar = c(2.8, 5, 4, 2))
+           op <- par(mar = c(2.8, 5, 4, 2))
 
 
            N  <- ncol(prices)
@@ -523,8 +526,8 @@ plot_performance <- function(prices, type = "table", main = "Performance Summary
                  cex <- 0.75
 
 
-           #xtsplot(prices, main = main, log = log, hline = 1.0, ...)
-           xtsplot(prices, main = main, log = log)
+           xtsplot(prices, main = main, log = log, hline = 1.0, ...)
+           #xtsplot(prices, main = main, log = log)
 
            pf <- perfstats(prices, plotout = FALSE, top = 3, digits = 2, percent = TRUE)
            print(pf)
@@ -533,7 +536,7 @@ plot_performance <- function(prices, type = "table", main = "Performance Summary
                              "Drawdown 2 (%)", "Drwdn 2 Days")
 
            panel2_names <- c("Annualized Sharpe", "Annualized Std Dev (%)", "MAR",
-                             "Ulcer Perf. Index", "Pos. Rolling Years (%)")
+                             "Ulcer Performance Index", "Pos. Rolling Years (%)")
 
            textplot(pf[panel1_names,, drop = FALSE], wrap.rownames = 23, cex = cex,
                     col.rownames=c("darkgreen", "red", "grey40", "red", "grey40" ),
@@ -550,7 +553,7 @@ plot_performance <- function(prices, type = "table", main = "Performance Summary
            # and rolling returns curve at bottom.
            #------------------------------------------------------------
            layout(matrix(c(1, 2, 3)), heights = c(2, 1, 1), widths = 1)
-           par(mar = c(3, 5, 4, 2))
+           op <- par(mar = c(3, 5, 4, 2))
 
            prices <- prices[complete.cases(prices), ]
            rets   <- ROC(prices, type = "discrete", na.pad = FALSE)
@@ -562,7 +565,7 @@ plot_performance <- function(prices, type = "table", main = "Performance Summary
                    legend = "topleft", hline = 1.0, ...)
            xtsplot(mom252, hline = 0, main = "12 Months Rolling Returns",
                    norm = FALSE, ylab = "Percent", xlab = "Rolling Performance",
-                   legend = "topleft", col = names(col))
+                   legend = "topleft", col = names(col), ...)
 
            chart.Drawdown(rets, colorset = col, lwd = 1, cex.lab = 1.2, cex.main = 1.25,
                           cex.axis = 0.8, ylab = "",
@@ -574,9 +577,8 @@ plot_performance <- function(prices, type = "table", main = "Performance Summary
            stop("perfplot:  Invalid plot type argument.")
          })
 
-
-
   par(op)
+  layout(matrix(c(1)), heights = c(1), widths = 1)
 
 
 }
