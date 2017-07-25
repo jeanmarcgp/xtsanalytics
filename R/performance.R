@@ -86,6 +86,7 @@ perfstats <- function(data, on = 'days', plotout = TRUE, value = TRUE, percent =
 
   opar <- par(no.readonly = TRUE)
   # Get the returns from the equity curves
+  data <- data[complete.cases(data), ]
   rets <- ROC(data, type="discrete")
   rets <- rets[complete.cases(rets), ]
 
@@ -472,12 +473,17 @@ xtscagr <- function(ec) {
 #' @param log       Specifies whether to use a semilog scale for the equity
 #'                  curve plot.  Default is "y" specifying the y scale is logarithmic.
 #'
+#' @param cex       The scaling factor for the performance table in table mode.
+#'
+#' @param tabheight The height of the table relative to the height of the plot, for
+#'                  type = "table". Default is 0.6.
+#'
 #' @param ...       Additional parameters passed through to function xtsplot.
 #'
 #' @export
 #-----------------------------------------------------------------------
 plot_performance <- function(prices, type = "table", main = "Performance Summary",
-                             log = "y", ...) {
+                             log = "y", cex = 1, tabheight = 0.6, digits = 2, ...) {
 
   #
   # TODO
@@ -499,6 +505,10 @@ plot_performance <- function(prices, type = "table", main = "Performance Summary
   #
   # #####################################
 
+  #--------------------------------------------------
+  # Ensure timeframe excludes NAs
+  #--------------------------------------------------
+  prices <- prices[complete.cases(prices), ]
   # op <- par(no.readonly = TRUE)
   switch(type,
          table = {
@@ -506,9 +516,8 @@ plot_performance <- function(prices, type = "table", main = "Performance Summary
            # Plot equity curves at top, performance table below
            #-------------------------------------------------------------
            layout(matrix(c(1, 1, 2, 3), nrow = 2, byrow = TRUE),
-                  heights = c(2, 1, 1), widths = 1)
+                  heights = c(1, tabheight), widths = 1)
            op <- par(mar = c(2.8, 5, 4, 2))
-
 
            N  <- ncol(prices)
            if(N > 8) {
@@ -520,16 +529,16 @@ plot_performance <- function(prices, type = "table", main = "Performance Summary
            #------------------------------------------------------------
            # Override table size (cex) based on number of columns
            #------------------------------------------------------------
-           if(N <= 5)      cex <- 1    else
-             if(N == 6)    cex <- 0.9  else
-               if(N == 7)  cex <- 0.8  else
-                 cex <- 0.75
+           if(N <= 5)      cex2 <- 1    else
+             if(N == 6)    cex2 <- 0.9  else
+               if(N == 7)  cex2 <- 0.8  else
+                 cex2 <- 0.75
 
 
            xtsplot(prices, main = main, log = log, hline = 1.0, ...)
            #xtsplot(prices, main = main, log = log)
 
-           pf <- perfstats(prices, plotout = FALSE, top = 3, digits = 2, percent = TRUE)
+           pf <- perfstats(prices, plotout = FALSE, top = 3, digits = digits, percent = TRUE)
            print(pf)
 
            panel1_names <- c("Annualized Return (%)", "Max. Drawdown (%)", "Max. Drwdn Days",
@@ -538,12 +547,14 @@ plot_performance <- function(prices, type = "table", main = "Performance Summary
            panel2_names <- c("Annualized Sharpe", "Annualized Std Dev (%)", "MAR",
                              "Ulcer Performance Index", "Pos. Rolling Years (%)")
 
-           textplot(pf[panel1_names,, drop = FALSE], wrap.rownames = 23, cex = cex,
+           cex_table <- cex * cex2
+           sprint("cex table = %s", cex_table)
+           textplot(pf[panel1_names,, drop = FALSE], wrap.rownames = 23, cex = cex_table,
                     col.rownames=c("darkgreen", "red", "grey40", "red", "grey40" ),
                     cmar = 1.0, rmar = 0.1)
            textplot(pf[panel2_names,, drop = FALSE], wrap.rownames = 23,
                     col.rownames=c("darkgreen", "red", "darkgreen", "darkgreen", "darkgreen" ),
-                    cmar = 1.0, rmar = 0.1, cex = cex)
+                    cmar = 1.0, rmar = 0.1, cex = cex_table)
 
 
          },

@@ -74,4 +74,3 @@ Returns a list of the following elements:
 \description{
 Calculate the WFO dates and subset the feature matrix
 }
-

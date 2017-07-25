@@ -26,4 +26,3 @@ Returns a vector of length(vecnames) that is named and ordered
 \description{
 Recycle a vector using names and smart rules
 }
-

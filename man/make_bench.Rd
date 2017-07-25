@@ -71,4 +71,3 @@ ecset$GoldenCross <- make_bench(xts_data[, 'SPY'], type = 'goldencross', on = 'm
 xtsplot(ecset, main = 'SPY and 4 day offset monthly Golden Cross')
 
 }
-

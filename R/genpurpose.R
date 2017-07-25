@@ -25,6 +25,7 @@
 #  .recycle             Recycle an object to a target length
 #  .recycle_better      Recycle a vector using names and smart rules
 #  .emptyxts            Make an xts matrix with colnames
+#  .loccopy             Find the location of a point on a plot to annotate
 #
 #
 ###################################################################################
@@ -468,5 +469,17 @@ emptyxts <- function(cnames = NULL, nc = 1, rowfill = NA,
   }
 
   return(xmat)
+}
+
+#--------------------------------------------------------------
+# Find the location of a point in a plot to make it
+# easy to annotate
+#--------------------------------------------------------------
+loccopy <- function(n, digits = 2){
+  data <- locator(n)
+  data <- round(cbind(data$x, data$y), digits)
+  clip <- pipe("pbcopy", "w")
+  write.table(data, file = clip, col.names = F, row.names = F)
+  close(clip)
 }
 

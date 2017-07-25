@@ -5,7 +5,7 @@
 \title{Generate combination plots to illustrate portfolio performance}
 \usage{
 plot_performance(prices, type = "table", main = "Performance Summary",
-  log = "y", ...)
+  log = "y", cex = 1, tabheight = 0.6, digits = 2, ...)
 }
 \arguments{
 \item{prices}{An xts matrix of equity curves or asset prices.}
@@ -23,9 +23,13 @@ are shown on the bottom section.  Default is
 \item{log}{Specifies whether to use a semilog scale for the equity
 curve plot.  Default is "y" specifying the y scale is logarithmic.}
 
+\item{cex}{The scaling factor for the performance table in table mode.}
+
+\item{tabheight}{The height of the table relative to the height of the plot, for
+type = "table". Default is 0.6.}
+
 \item{...}{Additional parameters passed through to function xtsplot.}
 }
 \description{
 Generate combination plots to illustrate portfolio performance
 }
-

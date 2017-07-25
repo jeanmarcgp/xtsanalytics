@@ -36,4 +36,3 @@ The row names are plotted by default.  Only the first 30 rows are plotted.
 x <- xts_data
 plot_df(x, main="First 20 rows in xts_data", footnote = "some footnote text here")
 }
-

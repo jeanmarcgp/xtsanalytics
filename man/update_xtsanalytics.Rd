@@ -10,4 +10,3 @@ update_xtsanalytics()
 A simple function to update package xtsanalytics from
 github if a new version is available.
 }
-

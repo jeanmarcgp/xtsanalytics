@@ -4,7 +4,8 @@
 \alias{make_features}
 \title{Generates a list of features from a universe of assets}
 \usage{
-make_features(prices, features, smooth = NA, on = "days", target = NA)
+make_features(prices, features, smooth = NA, on = "days", target = NA,
+  by_symbol = FALSE)
 }
 \arguments{
 \item{prices}{An xts matrix of daily asset prices, where each asset is a column, and
@@ -42,6 +43,11 @@ WORK YET, EXCEPT FOR DAILY SERIES on = "days"}
 model.  It is computed like any other feature, except that
 is it placed as the first item in the list returned, and renamed to 'y'.
 Default is NA, which means no target is specified.}
+
+\item{by_symbol}{Specifies the format of the features returned.  If TRUE, then a
+list of symbols, each containing an xts of the features for that symbol
+is returned.  If FALSE, then the opposite is returned - that is,
+a list of features, with each containing an xts of symbols.}
 }
 \value{
 A list containing as many xts matrices as there are features
@@ -52,11 +58,16 @@ A list containing as many xts matrices as there are features
         feature, if specified, which is renamed to `y`).
 }
 \description{
+MODIFICATIONS July 2017
+ - Removed the -1 adjustement to the division operation (_) to ensure
+   the division has not bias.
+ - Therefore, need to implement the addition / subtraction operations
+}
+\details{
 Generates a list of xts matrices, where each matrix in the list corresponds
 to one feature. The specified universe of asset should be an xts matrix
 of daily prices.
-}
-\details{
+
 If one of the feature corresponds to a target variable (y in a a machine
 learning model), then specifying its name using the `target` argument will
 automatically rename it to column y and place it as the first item
@@ -124,4 +135,3 @@ Formating examples:
 \seealso{
 \code{\link{make_featuremat}}
 }
-

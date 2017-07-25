@@ -26,4 +26,3 @@ Returns a dataframe, which each column properly cleaned up and
 \description{
 Loads parameters from an excel file to spawn multiple parametric runs
 }
-

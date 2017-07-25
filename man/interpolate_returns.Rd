@@ -22,4 +22,3 @@ An xts matrix of returns (1 or more columns is assumed).  The matrix
 is first converted to an equity curve so intermediate prices can be
 interpolated.
 }
-

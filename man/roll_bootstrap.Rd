@@ -33,4 +33,3 @@ consecutive return samples will be randomly shuffled.  However, the
 heteroscedastic properties of the series over longer time frames is
 mostly maintained.
 }
-

@@ -26,4 +26,3 @@ In addition, a linear regression is performed and the regression line is shown
 
 NOTE:  This function assumes that column 1 is y, and column 2 is ypred.
 }
-

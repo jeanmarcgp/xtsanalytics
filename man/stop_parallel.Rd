@@ -19,4 +19,3 @@ must be provided for this function to work.
 \seealso{
 start_parallel
 }
-

@@ -29,4 +29,3 @@ The return value is in the form of a column added to the xts matrix passed as th
 data argument.  The added column contains the cumulative period count since the last
 observed transition in the specified predictor column.
 }
-

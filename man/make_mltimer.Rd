@@ -45,4 +45,3 @@ Returns a list containing the folloring xts matrices:
 \description{
 Converts the output list of a machine learning predictor into a timer
 }
-

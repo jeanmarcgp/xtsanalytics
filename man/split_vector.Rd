@@ -28,4 +28,3 @@ Parameter vec must be a vector but can contain any element type.
 \examples{
 split_vector(c(1,2,3,4,5), 3)
 }
-

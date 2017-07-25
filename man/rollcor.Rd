@@ -25,4 +25,3 @@ Returns an xts matrix of the same width as the feature matrix
 Over a sliding window, calculate the rolling correlation of an xts
 matrix of features vs. a target variable.
 }
-

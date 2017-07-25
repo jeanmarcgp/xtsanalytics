@@ -102,4 +102,3 @@ xtsplot(z[, c('ec', 'indicator_timedec')], main = "make_timer() Example")
 \seealso{
 endpoints()
 }
-

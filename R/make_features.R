@@ -1,6 +1,8 @@
 ####################################################################################
 # FILE make_features.R
 #
+#  Use the comma to specify a lag or lead
+#
 #  TODO:  Format to generate higher moment features, such as returns squared.
 #  That format should also have a way to average the higher moments using
 #  ema or sma.
@@ -28,6 +30,13 @@
 # FUNCTION make_features
 #
 #' Generates a list of features from a universe of assets
+#'
+#' MODIFICATIONS July 2017
+#'  - Removed the -1 adjustement to the division operation (_) to ensure
+#'    the division has not bias.
+#'  - Therefore, need to implement the addition / subtraction operations
+#'  - use + and - for operators, but these get lost when cbinding matrices.
+#'  - therefore modify xtsbind to ensure hard colnames binding to keep + and -
 #'
 #' Generates a list of xts matrices, where each matrix in the list corresponds
 #' to one feature. The specified universe of asset should be an xts matrix
@@ -135,6 +144,11 @@
 #'                  is it placed as the first item in the list returned, and renamed to 'y'.
 #'                  Default is NA, which means no target is specified.
 #'
+#' @param by_symbol Specifies the format of the features returned.  If TRUE, then a
+#'                  list of symbols, each containing an xts of the features for that symbol
+#'                  is returned.  If FALSE, then the opposite is returned - that is,
+#'                  a list of features, with each containing an xts of symbols.
+#'
 #' @return A list containing as many xts matrices as there are features
 #'         specified by the features argument and, optionally, the target
 #'         argument. Each matrix has the same number
@@ -146,7 +160,19 @@
 #'
 #' @export
 #-------------------------------------------------------------------------------------
-make_features <- function(prices, features, smooth = NA, on = "days", target = NA) {
+make_features <- function(prices, features, smooth = NA, on = "days", target = NA,
+                          by_symbol = FALSE) {
+
+#
+#   #################
+#   prices = xts_gspc
+#   features = c("mom126_sd63") #, "sd63")
+#   smooth = NA
+#   on = "days"
+#   target = NA
+#   by_symbol = TRUE     # return a list by symbols instead of by features
+#
+#   ##################
 
   # If a target feature is specified, append it to features up front.
   if(!is.na(target)) {
@@ -215,7 +241,7 @@ make_features <- function(prices, features, smooth = NA, on = "days", target = N
         y <- lfn[[featlist[[i]][k + 1]]]
         x <- switch(oplist[[i]][k],
                     "." = x * y,
-                    "_" = x / y - 1,
+                    "_" = x / y,
                     stop("make_features:  invalid operation."))
       }
       # x contains the compounded feature so assign it to lfn
@@ -233,6 +259,27 @@ make_features <- function(prices, features, smooth = NA, on = "days", target = N
     names(retlfn) <- lnames
 
    }
+
+
+  #---------------------------------------------------------
+  # If by_symbol is TRUE, then extract feature set for
+  # each symbol of interest to return a list of symbols
+  # instead of the default list of features
+  #---------------------------------------------------------
+  if(by_symbol) {
+    featnames <- names(retlfn)
+    symnames  <- colnames(retlfn[[1]])
+    xlist     <- list()
+    for(i in symnames) {
+      x1           <- lapply(retlfn, function(x) x[, i])
+      x2           <- do.call(cbind, x1)
+      colnames(x2) <- featnames
+      xlist[[i]]   <- x2
+    }
+
+    retlfn <- xlist
+  }
+
 
   return(retlfn)
 

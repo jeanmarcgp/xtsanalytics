@@ -29,4 +29,3 @@ Returns a named vector of RGB colors (in hex format).
 \description{
 Make a nice color palette appropriate for plotting functions
 }
-

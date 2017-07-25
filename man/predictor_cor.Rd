@@ -58,4 +58,3 @@ down market.  Person linear correlations (function cor) is used to compute
 the correlation between the actual future market direction (internally represented
 as +1, -1), and the real value of the indicator
 }
-

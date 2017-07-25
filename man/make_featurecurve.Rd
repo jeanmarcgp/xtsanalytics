@@ -62,4 +62,3 @@ See Value below for details on how these equity curves are calculated.
 This function can be useful to explore how features related to actual
 returns.  Lagging of features is specified by argument Nlags.
 }
-

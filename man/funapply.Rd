@@ -37,4 +37,3 @@ and 100 periods for the third iteration.
 Since rollapplyr is used, the leading rows will contain NAs up to the window size + 1.
 Use the zoo:na.locf function to remove the leading NAs.
 }
-

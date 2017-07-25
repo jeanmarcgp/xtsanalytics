@@ -145,4 +145,3 @@ the predictions vs. actuals.  The matrix must contain the asset equity curve and
 a binary predictor class (1 = predict up market, 0 = predict down market).  This is
 especially useful for analyzing the performance of market timers.
 }
-

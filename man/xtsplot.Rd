@@ -9,7 +9,8 @@ xtsplot(data, method = c("zoo", "xts", "custom"), type = c("equity_curve",
   fname = NULL, pngsize = c(1280, 720), col = "auto", lwd = 1,
   lty = 1, shaded = NULL, shaded_inv = TRUE, shaded_col = c("green",
   "red", "orange", "grey", "blue", "yellow", "purple", "brown", "pink"),
-  vline = NA, hline = NA, xlab = NA, ylab = NA, ...)
+  vline = NA, vlabel = NA, hline = NA, xlab = NA, ylab = NA,
+  cex.legend = 0.7, ...)
 }
 \arguments{
 \item{data}{An xts matrix containing one or multiple columns to plot.}
@@ -81,6 +82,12 @@ Second list element (optional) is the color of the line in either
 numeric form or a string with the color name, which must correspond
 to a color in argument cols.}
 
+\item{vlabel}{Adds a vertical text label on the vline, if specified.  vlabel is
+specified as a list of two items.  Item 1 specifies the y value
+where the label will be placed.  Item 2 specifies the actual label text.
+The label is placed on the left side of the vline, reading from bottom to
+the top.}
+
 \item{hline}{Adds a horizontal line to the plot.  Arguments follow a similar format
 as vline.}
 
@@ -89,6 +96,8 @@ the plotted timeframe, possibly adjusted by omitting leading NAs.}
 
 \item{ylab}{Y-axis label as a character string.  If omitted, then default is
 "Prices" or, if data is normalized, then "Norm. Prices".}
+
+\item{cex.legend}{The relative size for the legend.  Default is 0.7.}
 
 \item{...}{Additional arguments passed to the plot method.}
 }
@@ -118,4 +127,3 @@ In addition, xtsplot provides the following facilities:
 
 }
 }
-

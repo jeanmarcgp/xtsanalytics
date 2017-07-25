@@ -96,6 +96,13 @@
 #'                   Second list element (optional) is the color of the line in either
 #'                   numeric form or a string with the color name, which must correspond
 #'                   to a color in argument cols.
+#'
+#' @param vlabel     Adds a vertical text label on the vline, if specified.  vlabel is
+#'                   specified as a list of two items.  Item 1 specifies the y value
+#'                   where the label will be placed.  Item 2 specifies the actual label text.
+#'                   The label is placed on the left side of the vline, reading from bottom to
+#'                   the top.
+#'
 #' @param hline      Adds a horizontal line to the plot.  Arguments follow a similar format
 #'                   as vline.
 #'
@@ -104,6 +111,8 @@
 #'
 #' @param ylab       Y-axis label as a character string.  If omitted, then default is
 #'                   "Prices" or, if data is normalized, then "Norm. Prices".
+#'
+#' @param cex.legend The relative size for the legend.  Default is 0.7.
 #'
 #' @param ...        Additional arguments passed to the plot method.
 #'
@@ -128,9 +137,11 @@ xtsplot <- function(data,
                     shaded_col  = c('green', 'red', 'orange', 'grey', 'blue',
                                     'yellow', 'purple', 'brown', 'pink' ),
                     vline       = NA,
+                    vlabel      = NA,
                     hline       = NA,
                     xlab        = NA,
                     ylab        = NA,
+                    cex.legend  = 0.7,
                      ... ) {
 
   # ################################################
@@ -262,6 +273,13 @@ xtsplot <- function(data,
              if(log == "y") yvl <- c(10^u[3], 10^u[4]) else
                yvl <- c(u[3], u[4])
              lines(xvl, yvl, lty = "dotted", lwd = 1, col = vlcol)
+
+             # Add a vertical label next to the vline, if specified
+             if(!is.na(vlabel[[1]])) {
+               text(x = as.numeric(as.Date(vl)), y = vlabel[[1]], labels = vlabel[[2]], srt = 90,
+                    pos = 2, cex = cex.legend)
+
+             }
            }
 
            # Draw a horizontal line if specified
@@ -283,7 +301,7 @@ xtsplot <- function(data,
            # Add the legend if specified
            if(legend != "none") {
              legend(legend, legend = colnames(data), col = col,
-                    lwd=lwd, pch=19, cex=0.7, bg="grey97")
+                    lwd=lwd, pch=19, cex=cex.legend, bg="grey97")
            }
 
            #--------------------------------------------------

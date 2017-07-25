@@ -33,7 +33,7 @@ the string whereas sprintcat does not.
 \itemize{
 \item \code{sprintcat}: Similar to sprint but without the carriage return
 }}
+
 \seealso{
 sprintf()
 }
-

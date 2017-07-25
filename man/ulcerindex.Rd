@@ -34,4 +34,3 @@ equity curves provided as an xts matrix.
 The ulcer index is implemented according to the formula
 described in the Wikipedia article "Ulcer Index".
 }
-

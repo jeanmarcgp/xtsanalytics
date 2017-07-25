@@ -18,4 +18,3 @@ Returns the same object as provided, recycled enough times
 \description{
 Recycle a data object and truncate to a length of N.
 }
-

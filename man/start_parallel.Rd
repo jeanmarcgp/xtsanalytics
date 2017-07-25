@@ -22,4 +22,3 @@ Starts the parallel backend cluster for use by the foreach function.
 \seealso{
 stop_parallel
 }
-

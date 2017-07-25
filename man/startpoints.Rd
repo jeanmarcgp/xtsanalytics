@@ -22,4 +22,3 @@ Returns a vector of the row positions in the matrix
 This function is similar to endpoints except that it finds the start of the
 period rather than the end of period.
 }
-

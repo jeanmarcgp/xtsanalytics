@@ -79,4 +79,3 @@ desired.
 \seealso{
 \code{\link{make_features}}
 }
-

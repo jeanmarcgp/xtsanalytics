@@ -33,4 +33,3 @@ This function aligns two or more time series to a common overlap point
 denoted time zero.  Thus, multiple time series of unrelated dates can
 be compared by overlapping and normalizing
 }
-

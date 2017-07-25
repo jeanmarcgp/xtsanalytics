@@ -70,4 +70,3 @@ get rid of the for loop.
 \seealso{
 quantmod::endpoints()
 }
-

@@ -30,4 +30,3 @@ the specified periods.  Higher moments of returns are also calculated up
 to the quintic returns (power of 5). Autocorrelations and cross-correlations
 are then computed and plotted.
 }
-

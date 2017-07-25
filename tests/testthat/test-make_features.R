@@ -9,6 +9,19 @@ context("Testing function: make_features()")
 
 test_that("Testing basic functionality of make_features()", {
 
+  #----------------------------------------------
+  # Test divide operator and by_symbol = TRUE
+  #----------------------------------------------
+  prices  <- xts_gspc
+
+  mom126 <- make_features(prices, features = "mom126", by_symbol = TRUE)[[1]]
+  sd63   <- make_features(prices, features = "sd63",   by_symbol = TRUE)[[1]]
+  div1   <- mom126 / sd63
+  div2   <- make_features(prices, features = "mom126_sd63", by_symbol = TRUE)[[1]]
+  all    <- xtsbind(mom126, sd63, div1, div2)
+
+  expect_equal(as.numeric(div2["2014-12-31", ]), as.numeric(div1["2014-12-31", ]))
+
   features <- c("mom5", "sd5", "mom21", "mom7.sd7", "mom3.sd2(sma5)")
   target   <- "mom10"
   prices   <- xts_data["2012-01-01/2012-03-31", 1:4]

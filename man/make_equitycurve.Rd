@@ -80,4 +80,3 @@ hysteresis.
 
 NOTE:  Trinary timers are not yet supported.
 }
-

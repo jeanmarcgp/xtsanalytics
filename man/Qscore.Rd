@@ -65,4 +65,3 @@ Normally, xy is a daily matrix, but the predictions may be done at some lower
 
 Any rows containing NAs are removed.
 }
-

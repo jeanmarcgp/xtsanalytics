@@ -27,4 +27,3 @@ easy output file naming.
 fnamestamp('./my cool file name.pdf')
 fnamestamp('./my other cool file name.pdf', asis=TRUE)
 }
-

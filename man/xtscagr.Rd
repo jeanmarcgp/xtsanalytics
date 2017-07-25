@@ -15,4 +15,3 @@ Returns a data frame of CAGR
 \description{
 The equity curves are in the form of prices, not returns.
 }
-

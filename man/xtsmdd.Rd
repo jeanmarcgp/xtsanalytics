@@ -18,4 +18,3 @@ Returns a dataframe of maximum drawdowns, expressed as fractions.
 Returns are assumed to be geometric ("discrete").  This function
 is very fast and works on wide xts matrices (many equity curves)
 }
-

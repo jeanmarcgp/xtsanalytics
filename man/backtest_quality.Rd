@@ -55,4 +55,3 @@ Therefore, 63 tests will be performed.  If the forecast was accurate 40 out of t
 
 The BTW factor is returned as a rolling window xts matrix.
 }
-

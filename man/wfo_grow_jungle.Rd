@@ -11,4 +11,3 @@ wfo_grow_jungle(featuremat, modelwindow = 252, wfo_span = "months",
 \description{
 TODO write the documentation!!!
 }
-

@@ -54,4 +54,3 @@ head(x, 15)
 y <- mget_symbols(c('SPY', 'QQQ', 'EWC', 'GLD'), startdate="1999-03-01", OHLC="Cl")
 head(y, 15)
 }
-

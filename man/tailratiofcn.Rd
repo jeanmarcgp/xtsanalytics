@@ -9,4 +9,3 @@ tailratiofcn(data, pct = 0.05)
 \description{
 Calculate the tail ratio on a set of returns
 }
-

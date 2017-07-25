@@ -19,4 +19,3 @@ Return the string provided without leading or trailing white
 \description{
 Remove leading or trailing white spaces from a character string
 }
-

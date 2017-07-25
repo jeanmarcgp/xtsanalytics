@@ -33,4 +33,3 @@ could be to perform a rolling SMA to it.
 \seealso{
 make_features
 }
-

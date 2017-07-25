@@ -21,4 +21,3 @@ Side effect of saving the object to the specified file.
 \description{
 Save an object to an .Rdata file with dateTime stamp and file path.
 }
-

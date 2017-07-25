@@ -131,4 +131,3 @@ In order to ensure no date is
                    at <start date>.  The default is NA which means no subsetting is
                    performed.
 }
-

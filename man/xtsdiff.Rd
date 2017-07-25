@@ -42,4 +42,3 @@ including the benchmark are implicitly truncated to align at the start of
 the latest series. This is so the equity curve of the benchmark and all
 others start at the same time.
 }
-

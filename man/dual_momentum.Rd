@@ -33,4 +33,3 @@ If no interest bearing cash instrument is provided, then it is possible
 that all assets will have negative momentum.  In such case, the function will
 go to cash and return no interest (daily returns = 0)
 }
-

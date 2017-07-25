@@ -15,4 +15,3 @@ and removes them if specified so.
 \details{
 This function needs to be properly documented...
 }
-

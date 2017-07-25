@@ -25,4 +25,3 @@ This function uses the version 2 of optimize.portfolio.  More details by
 \examples{
  backtest_opt()
 }
-

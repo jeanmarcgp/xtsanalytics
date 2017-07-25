@@ -35,4 +35,3 @@ Periodically rebalances a portfolio to a set of weights according to a weight ve
 \details{
 NOTE:  This may be buggy!  Test and examine the code first!!!
 }
-

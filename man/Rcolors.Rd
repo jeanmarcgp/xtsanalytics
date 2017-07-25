@@ -14,4 +14,3 @@ by name, and the second one by their respective Hex codes.
 The code is courtesy of the blog New Energy Research at
 bxhorn.com
 }
-

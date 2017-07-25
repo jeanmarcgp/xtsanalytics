@@ -20,4 +20,3 @@ myobject <- 5
 getname(myobject)
 
 }
-

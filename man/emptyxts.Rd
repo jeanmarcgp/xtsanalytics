@@ -27,4 +27,3 @@ An empty xts matrix filled with NAs
 \description{
 Create an empty xts matrix filled with NAs
 }
-

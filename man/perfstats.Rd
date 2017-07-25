@@ -58,4 +58,3 @@ A dataframe that shows the summary performance of the equity curves.  The
 Returns a dataframe containing performance stats on one or multiple
 equity curves.  May also plot it on the graphic device.
 }
-

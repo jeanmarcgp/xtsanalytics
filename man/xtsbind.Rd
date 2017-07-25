@@ -23,4 +23,3 @@ If the xts matrices do not have the same number of rows, it will appropriately
 pad with NAs.  In addition, it binds on date (not time), so if the prices
 are sampled at different times, then the times are ignored for proper binding.
 }
-
