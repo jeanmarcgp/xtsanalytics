@@ -26,6 +26,7 @@
 #  .recycle_better      Recycle a vector using names and smart rules
 #  .emptyxts            Make an xts matrix with colnames
 #  .loccopy             Find the location of a point on a plot to annotate
+#  .xtsbind             cbinds two or more xts matrices and keeps column names intact
 #
 #
 ###################################################################################
@@ -483,3 +484,50 @@ loccopy <- function(n, digits = 2){
   close(clip)
 }
 
+#----------------------------------------------------------------------------------
+#  FUNCTION xtsbind
+#
+#' Binds xts columns from two or more xts matrices.
+#'
+#' Similar to cbind, this function binds xts matrices column-wise.
+#' If the xts matrices do not have the same number of rows, it will appropriately
+#' pad with NAs.  In addition, it binds on date (not time), so if the prices
+#' are sampled at different times, then the times are ignored for proper binding.
+#'
+#' In addition, column names are as is without substitution of
+#' special characters by periods.  This is particularly useful when binding
+#' xts matrices of features generated using make_features2 (where we want to
+#' keep the operators + - * / and the delay operator ; in the column names.
+#'
+#' Note however that column names are extracted from the first element of each
+#' expression without further manipulation.  Therefore, xtsbind(x, y+2) will have
+#' columns names of x and y.  Similarly, xtsbind(x, x+y) will have columns names of
+#' x and x, where the second x has .1 appended as would normally be the case for
+#' a cbind statement.
+#'
+#' @param x      First xts matrix to bind.
+#' @param ...    Additional xts matrices to bind.
+#'
+#' @return Returns an xts matrix that cbinds all matrices provided as
+#'         arguments, padded with NAs as needed, subject to the column names
+#'         exceptions as detailed above.
+#' @export
+#----------------------------------------------------------------------------------
+xtsbind <- function (x, ...) {
+ # xts::cbind.xts(x, y, ...)
+
+  # Extract arguments: [-1] to remove the function call (first item)
+  myargs <- as.character(as.list(match.call()[-1]))
+  #print(str(myargs))
+
+  cnames <- NULL
+  for(i in myargs) {
+    cnames <- c(cnames, colnames(eval(parse(text = i))))
+  }
+
+  results <- xts::cbind.xts(x, ...)
+  colnames(results) <- cnames
+
+  return(results)
+
+}

@@ -2,7 +2,7 @@
 #
 #  FUNCTIONS IN THIS FILE:  xtsoverlay.R
 #   .xtsoverlay
-#   .xtsbind
+#   .xtsbind is now moved to file genpurpose.R
 #
 ###################################################################################
 
@@ -116,25 +116,4 @@ xtsoverlay<- function(data, timezero, offsets = c(-20, 100), norm=TRUE) {
 }
 
 
-#----------------------------------------------------------------------------------
-#  FUNCTION xtsbind
-#
-#' Binds xts columns from two or more xts matrices.
-#'
-#' This functions is similar to cbind in that it binds xts matrices column-wise.
-#' If the xts matrices do not have the same number of rows, it will appropriately
-#' pad with NAs.  In addition, it binds on date (not time), so if the prices
-#' are sampled at different times, then the times are ignored for proper binding.
-#'
-#' @param x      First xts matrix to bind.
-#' @param y      Second xts matrix to bind.
-#' @param ...    Additional xts matrices to bind.
-#'
-#' @return Returns a an xts matrix that cbinds all matrices provided as
-#'         arguments, padded with NAs as needed.
-#' @export
-#----------------------------------------------------------------------------------
-xtsbind <- function (x, y, ...) {
-  xts::cbind.xts(x, y, ...)
 
-}

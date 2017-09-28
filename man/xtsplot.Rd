@@ -5,12 +5,12 @@
 \title{Plot xts time series objects via multiple methods.}
 \usage{
 xtsplot(data, method = c("zoo", "xts", "custom"), type = c("equity_curve",
-  "performance"), legend = "topleft", norm = TRUE, bench = 0, log = "",
-  fname = NULL, pngsize = c(1280, 720), col = "auto", lwd = 1,
-  lty = 1, shaded = NULL, shaded_inv = TRUE, shaded_col = c("green",
-  "red", "orange", "grey", "blue", "yellow", "purple", "brown", "pink"),
-  vline = NA, vlabel = NA, hline = NA, xlab = NA, ylab = NA,
-  cex.legend = 0.7, ...)
+  "performance"), legend = "topleft", norm = TRUE, mode = "portfolio",
+  bench = 0, log = "", fname = NULL, pngsize = c(1280, 720),
+  col = "auto", lwd = 1, lty = 1, shaded = NULL, shaded_inv = TRUE,
+  shaded_col = c("green", "red", "orange", "grey", "blue", "yellow", "purple",
+  "brown", "pink"), vline = NA, vlabel = NA, hline = NA, xlab = NA,
+  ylab = NA, cex.legend = 0.7, return_xts = FALSE, ...)
 }
 \arguments{
 \item{data}{An xts matrix containing one or multiple columns to plot.}
@@ -31,6 +31,12 @@ to the plot method.}
 
 \item{norm}{Logical. Flag specifying whether to normalize multiple
 curves to a common starting date and level of one.  Default is TRUE.}
+
+\item{mode}{Defines the mode used to plot the information.  When mode = "gain",
+the percentage gain is shown starting at 0% (and thefore normalized),
+but only a linear scale is allowed.  When mode = "portfolio" (the default),
+then the value of the portfolio is shown starting at 1.0 if normalized is
+true.  When mode = "growthof100", then all is normalized at 100.}
 
 \item{bench}{Specifies the column (number or name) to highlight as the benchmark.}
 
@@ -74,17 +80,19 @@ as the line colors as they are purposely made pastel-like and transparent
 to highlight overlapping regions.  Recycled as needed.}
 
 \item{vline}{Adds a vertical line to the plot. May be a vector of length 1 or
-a list of length 2.  NA = no line plotted (default). First list
+a list of length 2 or 3.  NA = no line plotted (default). First list
 element (or length one vector) contains the
 X coordinate of the vertical line, and it is either a numeric
 for a zoo plot, or a string representing a date for an xts plot.
 Second list element (optional) is the color of the line in either
 numeric form or a string with the color name, which must correspond
-to a color in argument cols.}
+to a color in argument cols.  The third list element specifies the line width
+or, if not specified, the line width defaults to lwd = 1.}
 
 \item{vlabel}{Adds a vertical text label on the vline, if specified.  vlabel is
 specified as a list of two items.  Item 1 specifies the y value
-where the label will be placed.  Item 2 specifies the actual label text.
+where the label will be placed (label ends at that y value). The size of
+the text follows cex.legend. Item 2 specifies the actual label text.
 The label is placed on the left side of the vline, reading from bottom to
 the top.}
 
@@ -97,7 +105,10 @@ the plotted timeframe, possibly adjusted by omitting leading NAs.}
 \item{ylab}{Y-axis label as a character string.  If omitted, then default is
 "Prices" or, if data is normalized, then "Norm. Prices".}
 
-\item{cex.legend}{The relative size for the legend.  Default is 0.7.}
+\item{cex.legend}{The relative size for the legend and the vlabel.  Default is 0.7.}
+
+\item{return_xts}{Logical. When TRUE, the normalized and scaled xts matrix plotted
+is returned.  Default is FALSE.}
 
 \item{...}{Additional arguments passed to the plot method.}
 }

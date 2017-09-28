@@ -52,6 +52,11 @@
 #'                   to the plot method.
 #' @param norm       Logical. Flag specifying whether to normalize multiple
 #'                   curves to a common starting date and level of one.  Default is TRUE.
+#' @param mode       Defines the mode used to plot the information.  When mode = "gain",
+#'                   the percentage gain is shown starting at 0% (and thefore normalized),
+#'                   but only a linear scale is allowed.  When mode = "portfolio" (the default),
+#'                   then the value of the portfolio is shown starting at 1.0 if normalized is
+#'                   true.  When mode = "growthof100", then all is normalized at 100.
 #' @param bench      Specifies the column (number or name) to highlight as the benchmark.
 #' @param log        Log argument passed to methods.  Currently supported by the
 #'                   zoo method, and its value can be "y" (for y log scale), "x"
@@ -89,17 +94,19 @@
 #'                   to highlight overlapping regions.  Recycled as needed.
 #'
 #' @param vline      Adds a vertical line to the plot. May be a vector of length 1 or
-#'                   a list of length 2.  NA = no line plotted (default). First list
+#'                   a list of length 2 or 3.  NA = no line plotted (default). First list
 #'                   element (or length one vector) contains the
 #'                   X coordinate of the vertical line, and it is either a numeric
 #'                   for a zoo plot, or a string representing a date for an xts plot.
 #'                   Second list element (optional) is the color of the line in either
 #'                   numeric form or a string with the color name, which must correspond
-#'                   to a color in argument cols.
+#'                   to a color in argument cols.  The third list element specifies the line width
+#'                   or, if not specified, the line width defaults to lwd = 1.
 #'
 #' @param vlabel     Adds a vertical text label on the vline, if specified.  vlabel is
 #'                   specified as a list of two items.  Item 1 specifies the y value
-#'                   where the label will be placed.  Item 2 specifies the actual label text.
+#'                   where the label will be placed (label ends at that y value). The size of
+#'                   the text follows cex.legend. Item 2 specifies the actual label text.
 #'                   The label is placed on the left side of the vline, reading from bottom to
 #'                   the top.
 #'
@@ -112,7 +119,10 @@
 #' @param ylab       Y-axis label as a character string.  If omitted, then default is
 #'                   "Prices" or, if data is normalized, then "Norm. Prices".
 #'
-#' @param cex.legend The relative size for the legend.  Default is 0.7.
+#' @param cex.legend The relative size for the legend and the vlabel.  Default is 0.7.
+#'
+#' @param return_xts Logical. When TRUE, the normalized and scaled xts matrix plotted
+#'                   is returned.  Default is FALSE.
 #'
 #' @param ...        Additional arguments passed to the plot method.
 #'
@@ -125,6 +135,7 @@ xtsplot <- function(data,
                     type        = c("equity_curve", "performance"),
                     legend      = "topleft",
                     norm        = TRUE,
+                    mode        = "portfolio",
                     bench       = 0,
                     log         = "",
                     fname       = NULL,
@@ -142,6 +153,7 @@ xtsplot <- function(data,
                     xlab        = NA,
                     ylab        = NA,
                     cex.legend  = 0.7,
+                    return_xts  = FALSE,
                      ... ) {
 
   # ################################################
@@ -180,13 +192,45 @@ xtsplot <- function(data,
   # Normalize the curves unless specified otherwise
   #------------------------------------------------------------
   if(norm) {
-    ylab <- "Norm. Prices"
+
     data <- data[complete.cases(data), , drop=FALSE]
     if(any(as.numeric(data[1,]) == 0))
       stop("xtsplot:  Can't normalize. First data row contains zeroes.")
     coredata(data) <- apply(data, 2, function(x) x / rep(x[1], length(x)))
+
     sprint("  All curves normalized on: %s", index(data[1,]))
   }
+
+  #------------------------------------------------------------
+  # Adjust variables based on mode selected
+  #------------------------------------------------------------
+  switch(mode,
+         portfolio = {
+           # Default is portfolio, set up proper y labels
+           if(is.na(ylab)) {
+             if(norm) ylab <- "Norm. Prices" else
+               ylab <- "Prices"
+             }
+           },
+         gain = {
+           # Normalize to 0% and turn off log scale
+           sprint("gain mode selected.  Log scale is disabled.")
+           if(is.na(ylab)) ylab <- "Gain (%)"
+           data <- (data - 1) * 100
+           log  <- ""
+
+           },
+         growthof100 = {
+           # Normalize to 100
+           sprint("growthof100 mode selected.")
+           if(is.na(ylab)) ylab <- "Growth of $100"
+           data <- data * 100
+
+           },
+         {
+           # Default in switch
+           stop("ERROR:  mode does not have a valid value.")
+           })
 
   #------------------------------------------------------------
   # Set up common variables and put benchmark last
@@ -263,8 +307,10 @@ xtsplot <- function(data,
 
            # Draw a vertical line if specified
            if(!is.na(vline[[1]])) {
-             if(length(vline) == 2) vlcol <- color_vec[vline[[2]]] else
+             if(length(vline) >= 2) vlcol <- color_vec[vline[[2]]] else
                vlcol <- color_vec[1]
+             if(length(vline) == 3) vlwd  <- vline[[3]] else vlwd = 1
+
              if("xts" %in% class(data)) vl <- as.Date(vline[[1]]) else
                vl <- vline[[1]]
 
@@ -272,7 +318,7 @@ xtsplot <- function(data,
              xvl <- c(vl, vl)
              if(log == "y") yvl <- c(10^u[3], 10^u[4]) else
                yvl <- c(u[3], u[4])
-             lines(xvl, yvl, lty = "dotted", lwd = 1, col = vlcol)
+             lines(xvl, yvl, lty = "longdash", lwd = vlwd, col = vlcol)
 
              # Add a vertical label next to the vline, if specified
              if(!is.na(vlabel[[1]])) {
@@ -300,8 +346,20 @@ xtsplot <- function(data,
 
            # Add the legend if specified
            if(legend != "none") {
-             legend(legend, legend = colnames(data), col = col,
-                    lwd=lwd, pch=19, cex=cex.legend, bg="grey97")
+             legnames <- colnames(data)
+             ndata    <- length(legnames)
+             legcol   <- col
+             leglwd   <- lwd
+
+             # If benchmark exists & multiple curves, then move bench to 1st item on the legend
+             if(bench !=0 && ndata > 1) {
+               legnames <- c(legnames[ndata], legnames[1:(ndata-1)])
+               legcol   <- c(col[ndata], col[1:(ndata-1)])
+               leglwd   <- c(lwd[ndata], lwd[1:(ndata-1)])
+             }
+
+             legend(legend, legend = legnames, col = legcol,
+                    lwd=leglwd, pch=19, cex=cex.legend, bg="grey97")
            }
 
            #--------------------------------------------------
@@ -356,6 +414,7 @@ xtsplot <- function(data,
   #------------------------------------------------
   #par(save_par)
 
+  if(return_xts) return(data)
 
 }   ######  END FUNCTION xtsplot  ######
 
