@@ -4,7 +4,8 @@
 \alias{make_colors}
 \title{Make a nice color palette appropriate for plotting functions}
 \usage{
-make_colors(n = 0, type = c("lines", "regions"), showcolors = FALSE)
+make_colors(n = 0, type = c("lines", "regions"), showcolors = FALSE,
+  alpha = "FF")
 }
 \arguments{
 \item{n}{Number of colors to return.  If n is larger than the palette
@@ -14,11 +15,16 @@ selected, then the colors are recycled.}
 (the default), then the palette is a set of colors most
 appropriate to plot lines on a white background.
 If type = 'regions' then the palette is a set of
-pastel colors most appropriate to highlight regions on
-a plot or to make a bar graph.}
+pastel colors appropriate to highlight regions on
+a plot or to make a bar graph (with a preset level of alpha).}
 
 \item{showcolors}{Logical.  Specifies whether to plot a bar chart that shows
 the colors in the selected palette with their names.}
+
+\item{alpha}{The colors alpha or transparency for the entire set.
+Defined as a 2 character hex string to be appended to
+each color.  Ignored when type = "regions". Default is "FF"
+for no transparency.}
 }
 \value{
 Returns a named vector of RGB colors (in hex format).

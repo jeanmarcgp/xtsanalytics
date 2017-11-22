@@ -259,9 +259,9 @@ xtsplot <- function(data,
   if(bench_i != 0 && length(bench_i) == 1) {   # Not 0 nor integer(0)
     columns <- c(columns[-bench_i], bench_i)   # Move benchmark to last col.
     sprint("  Benchmark selected: %s", cn[bench_i])
-    lwd[N]  <- 3          # Benchmark line width
-    lty[N]  <- 1          # Benchmark line type
-    col[N]  <- "#000000"  # Benchmark line is black
+    lwd[N]  <- 3            # Benchmark line width
+    lty[N]  <- 1            # Benchmark line type
+    col[N]  <- "#000000FF"  # Benchmark line is black
   } else {
     sprint("  No Benchmark selected.")
   }
@@ -476,11 +476,16 @@ draw_shaded_regions <- function(shaded, shaded_col, shaded_inv, log='') {
 #'                    (the default), then the palette is a set of colors most
 #'                    appropriate to plot lines on a white background.
 #'                    If type = 'regions' then the palette is a set of
-#'                    pastel colors most appropriate to highlight regions on
-#'                    a plot or to make a bar graph.
+#'                    pastel colors appropriate to highlight regions on
+#'                    a plot or to make a bar graph (with a preset level of alpha).
 #'
 #' @param showcolors  Logical.  Specifies whether to plot a bar chart that shows
 #'                    the colors in the selected palette with their names.
+#'
+#' @param alpha       The colors alpha or transparency for the entire set.
+#'                    Defined as a 2 character hex string to be appended to
+#'                    each color.  Ignored when type = "regions". Default is "FF"
+#'                    for no transparency.
 #'
 #' @return Returns a named vector of RGB colors (in hex format).
 #'         xtsanalytics functions can refer to the names of these colors rather
@@ -489,9 +494,8 @@ draw_shaded_regions <- function(shaded, shaded_col, shaded_inv, log='') {
 #'
 #' @export
 #-------------------------------------------------------------------------------------
-make_colors <- function(n = 0,
-                        type       = c('lines', 'regions'),
-                        showcolors = FALSE ) {
+make_colors <- function(n = 0, type = c('lines', 'regions'),
+                        showcolors = FALSE, alpha = "FF" ) {
 
 #
 #   col         = c('black', 'blue', 'green', 'red', 'orange',
@@ -562,7 +566,15 @@ make_colors <- function(n = 0,
   if(n == 0) n <- length(col)
   col2 <- rep(col, ceiling(n / length(col)))[1:n]
 
-  return(col2)
+  # Append the alpha to the palette unless type == "regions"
+  if(type != "regions")
+    col3 <- paste0(col2, alpha)
+  else
+    col3 <- col2
+
+  names(col3) <- names(col2)
+
+  return(col3)
 
 
 }   ####  END FUNCTION make_colors  ####

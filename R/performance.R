@@ -16,6 +16,7 @@
 #  .xtsmdd            Efficiently computes the maximum drawdown from returns
 #  .xtsCAGR           Efficiently computes the CAGR from an xts of returns
 #  .plot_performance  Various complex plots to summarize EC performance
+#  .rawreturns        Computes the rawreturns (not annualized) on an xts
 #
 #
 ###################################################################################
@@ -62,19 +63,28 @@
 #'                    do not count.  Default is zero and it may be expressed as
 #'                    either a positive or negative number.
 #'
+#' @param drawdown_dates  Logical.  IF TRUE, return a list containing
+#'                    two dataframes.  The first is a dataframe of all performance statistics,
+#'                    and the second is a dataframe of drawdown dates (Start, End, Trough)
+#'                    Default is FALSE, which means only the dataframe of performance
+#'                    statistics is returned.
+#'
 #' @param ...      Additional arguments passed on to plot_df.  For example, the title
 #'                 text and size, and footnote size may be modified using this.
 #'
-#' @return A dataframe that shows the summary performance of the equity curves.  The
-#'        annualized return, the maximum drawdown and, by default the second and third
+#' @return Either a list of two dataframes (drawdown_dates is TRUE) or a single dataframe
+#'        (drawdown_dates is FALSE) that shows the summary performance of the equity curves.
+#'        The annualized return, the maximum drawdown and, by default the second and third
 #'        drawdowns, the annualized standard deviation, the annualized Sharpe ratio (rf = 0%)
 #'        the MAR ratio, the ulcer index and the percentage of positive rolling years.
+#'        See parameter drawdown_dates for the specification of the list.
 #'
 #' @export
 #----------------------------------------------------------------------------------
 perfstats <- function(data, on = 'days', plotout = TRUE, value = TRUE, percent = TRUE,
-                      digits = 2, top = 3, main = "Performance Summary",
-                      scaling = "auto", title_size = "auto", ulcerthresh = 0, ...) {
+                      digits = 2, top = 2, main = "Performance Summary",
+                      scaling = "auto", title_size = "auto", ulcerthresh = 0,
+                      drawdown_dates = FALSE, ...) {
 
   # #######################################
   # ######  For development
@@ -82,6 +92,7 @@ perfstats <- function(data, on = 'days', plotout = TRUE, value = TRUE, percent =
   # data = xts_data["2008/2014", 1] #:4]
   # on   = "days";  plotout = TRUE; value = TRUE; percent = TRUE; digits = 2
   # top  = 3; main = "summary"; scaling = "auto"; title_size = "auto"
+  # ulcerthresh = 0;  drawdown_dates = TRUE
   # #######################################
 
   opar <- par(no.readonly = TRUE)
@@ -91,8 +102,10 @@ perfstats <- function(data, on = 'days', plotout = TRUE, value = TRUE, percent =
   rets <- rets[complete.cases(rets), ]
 
   # Calculate the performance statistics dataframe
-  stats_df2 <- perf_df(rets = rets, on = on, percent = percent,
-                       digits = digits, top = top, ulcerthresh = ulcerthresh)
+  statslist <- perf_df(rets = rets, on = on, percent = percent, digits = digits,
+                       top = top, ulcerthresh = ulcerthresh)
+
+  stats_df2 <- statslist$dd_numbers
 
   nc        <- ncol(rets)
 
@@ -120,8 +133,12 @@ perfstats <- function(data, on = 'days', plotout = TRUE, value = TRUE, percent =
   }
 
   #par(opar)
+  if(drawdown_dates) retlist <- list(dd_numbers = statslist$dd_numbers,
+                                     dd_dates   = statslist$dd_dates)
+  else
+    retlist <- statslist$dd_numbers
 
-  if(value) return(stats_df2)
+  if(value)  return(retlist)
 
 }  ##############  END perfstats  ##############
 
@@ -132,7 +149,8 @@ perfstats <- function(data, on = 'days', plotout = TRUE, value = TRUE, percent =
 #
 # This function is not exported
 #---------------------------------------------------------------------------------
-perf_df <- function(rets, on = "days", percent = TRUE, digits = 2, top = 3, ulcerthresh = 0) {
+perf_df <- function(rets, on = "days", percent = TRUE, digits = 2, top = 3,
+                    ulcerthresh = 0) {
 
 
   # ################  Code for testing   ##################
@@ -144,8 +162,7 @@ perf_df <- function(rets, on = "days", percent = TRUE, digits = 2, top = 3, ulce
   # digits  = 2
   # top     = 3
   # ulcerthresh = 0
-
-  #######################################################
+  # #######################################################
 
 
   # Compute basic performance stats
@@ -193,7 +210,10 @@ perf_df <- function(rets, on = "days", percent = TRUE, digits = 2, top = 3, ulce
   }
 
   # Compute all drawdowns
-  all_dd <- xtsdrawdowns(rets, top = top, digits = (digits + 2), percent = percent)
+  # all_dd <- xtsdrawdowns(rets, top = top, digits = (digits + 2), percent = percent)
+
+  dd_info  <- xtsdrawdowns(rets, top = top, digits = (digits + 2), percent = percent)
+  all_dd   <- dd_info$DD_numbers
 
   #  Row bind to build the final dataframe
   rownames(stats_df)[3] <- "Annualized Sharpe"
@@ -225,7 +245,9 @@ perf_df <- function(rets, on = "days", percent = TRUE, digits = 2, top = 3, ulce
   stats_df2 <- rbind(stats_df2, mar, ulcer, upi, posroll)
   stats_df2 <- round(stats_df2, digits = digits)
 
-  return(stats_df2)
+  ddlist    <- list(dd_numbers = stats_df2, dd_dates = dd_info$DD_dates)
+
+  return(ddlist)
 
 }
 
@@ -332,21 +354,22 @@ ulcerindex <- function(data, type = "ec", on = "days", DDthresh = 0) {
 #----------------------------------------------------------------------------------
 xtsdrawdowns <- function(rets, top = top, digits = 4, percent = TRUE) {
 
-  # ############# for code testing  ############
   # ################  Code for testing   ##################
   # library(xtsanalytics)
   # rets  = ROC(xts_data[, 1], type = "discrete")
   # rets  = rets[complete.cases(rets),]
   # on    = "days"
   # percent = TRUE
-  # digits  = 2
+  # digits  = 4
   # top     = 3
   #
   # ##############
   nc    <- ncol(rets)
 
   #------------------------------------------------------
-  # Set up the DD and DDlength containers
+  # Set up the drawdown containers: df = drawdowns,
+  # dflen = number of days, dffrom = DD start date
+  # dfend = DD end date
   #------------------------------------------------------
   df                 <- data.frame(matrix(NA, nrow=top, ncol=nc),
                                    row.names=paste("Drawdown", 1:top))
@@ -354,17 +377,38 @@ xtsdrawdowns <- function(rets, top = top, digits = 4, percent = TRUE) {
   rownames(df)[1]    <- "Max. Drawdown"
 
   dflen              <- data.frame(matrix(NA, nrow=top, ncol=nc),
-                                   row.names=paste("Drwdn", 1:top, "Days"))
+                                   row.names=paste("Drwdn", 1:top))
   colnames(dflen)    <- colnames(rets)
-  rownames(dflen)[1] <- "Max. Drwdn Days"
+  rownames(dflen)[1] <- "Max. Drwdn"
 
-  #------------------------------------------------------
+
+  df_start    <- dflen
+  df_end      <- dflen
+  df_trough   <- dflen
+  df_decline  <- dflen
+  df_recovery <- dflen
+
+  rownames(dflen)       <- paste(rownames(dflen),       "Days")
+  rownames(df_start)    <- paste(rownames(df_start),    "Start")
+  rownames(df_end)      <- paste(rownames(df_end),      "End")
+  rownames(df_trough)   <- paste(rownames(df_trough),   "Trough")
+  rownames(df_decline)  <- paste(rownames(df_decline),  "Decline")
+  rownames(df_recovery) <- paste(rownames(df_recovery), "Recovery")
+
+
+  #----------------------------------------------------------------
   # Loop through each column and extract dd and length
-  #------------------------------------------------------
+  # rep(0, ...) used as filler for < top drawdowns available
+  #----------------------------------------------------------------
   for(i in 1:nc) {
     x          <- table.Drawdowns(rets[, i], top = top, digits = digits)
-    df[, i]    <- c(x$Depth,  rep(0, top - length(x$Depth)))
-    dflen[, i] <- c(x$Length, rep(0, top - length(x$Length)))
+    df[, i]          <- c(x$Depth,           rep(0, top - length(x$Depth)))
+    dflen[, i]       <- c(x$Length,          rep(0, top - length(x$Length)))
+    df_start[, i]    <- c(x$From,            rep(0, top - length(x$From)))
+    df_end[, i]      <- c(x$To,              rep(0, top - length(x$To)))
+    df_trough[, i]   <- c(x$Trough,          rep(0, top - length(x$Trough)))
+    df_decline[, i]  <- c(x[, "To Trough"],  rep(0, top - length(x[, "To Trough"])))
+    df_recovery[, i] <- c(x$Recovery,        rep(0, top - length(x$Recovery)))
   }
 
   #------------------------------------------------------
@@ -376,9 +420,21 @@ xtsdrawdowns <- function(rets, top = top, digits = 4, percent = TRUE) {
   }
 
   dfall  <- NULL
-  for(i in 1:nrow(df)) dfall <- rbind(dfall, df[i, , drop = FALSE ], dflen[i, , drop = FALSE])
+  dfdates <- NULL
 
-  return(dfall)
+  for(i in 1:nrow(df))  {
+    dfall <- rbind(dfall, df[i, , drop = FALSE ], dflen[i, , drop = FALSE],
+                   df_decline[i, , drop = FALSE], df_recovery[i, , drop = FALSE])
+
+    dfdates <- rbind(dfdates, df_start[i, , drop = FALSE], df_end[i, , drop = FALSE],
+                     df_trough[i, , drop = FALSE])
+  }
+
+
+  dfreturn <- list(DD_numbers = dfall, DD_dates = dfdates)
+
+
+  return(dfreturn)
 
 }
 
@@ -593,3 +649,23 @@ plot_performance <- function(prices, type = "table", main = "Performance Summary
 
 
 }
+
+
+#-------------------------------------------------------------
+# Function rawreturns
+#
+#' Compute the raw returns on an xts of prices
+#'
+#' @param prices   The xts matrix of prices
+#'
+#' @return Returns the raw returns (not annualized) returns
+#' of each xts series in percentage.
+#'
+#' @export
+#-------------------------------------------------------------
+rawreturns <- function(prices) {
+  x        <- (as.numeric(last(prices)) / as.numeric(first(prices)) - 1) * 100
+  names(x) <- colnames(prices)
+  return(x)
+}
+

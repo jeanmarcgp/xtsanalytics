@@ -5,8 +5,9 @@
 \title{Compute performance statistics on equity curves}
 \usage{
 perfstats(data, on = "days", plotout = TRUE, value = TRUE,
-  percent = TRUE, digits = 2, top = 3, main = "Performance Summary",
-  scaling = "auto", title_size = "auto", ulcerthresh = 0, ...)
+  percent = TRUE, digits = 2, top = 2, main = "Performance Summary",
+  scaling = "auto", title_size = "auto", ulcerthresh = 0,
+  drawdown_dates = FALSE, ...)
 }
 \arguments{
 \item{data}{An xts matrix of equity curves, each column being one equity curve.}
@@ -45,14 +46,22 @@ calculation.  In other words, drawdowns smaller than this number
 do not count.  Default is zero and it may be expressed as
 either a positive or negative number.}
 
+\item{drawdown_dates}{Logical.  IF TRUE, return a list containing
+two dataframes.  The first is a dataframe of all performance statistics,
+and the second is a dataframe of drawdown dates (Start, End, Trough)
+Default is FALSE, which means only the dataframe of performance
+statistics is returned.}
+
 \item{...}{Additional arguments passed on to plot_df.  For example, the title
 text and size, and footnote size may be modified using this.}
 }
 \value{
-A dataframe that shows the summary performance of the equity curves.  The
-       annualized return, the maximum drawdown and, by default the second and third
+Either a list of two dataframes (drawdown_dates is TRUE) or a single dataframe
+       (drawdown_dates is FALSE) that shows the summary performance of the equity curves.
+       The annualized return, the maximum drawdown and, by default the second and third
        drawdowns, the annualized standard deviation, the annualized Sharpe ratio (rf = 0%)
        the MAR ratio, the ulcer index and the percentage of positive rolling years.
+       See parameter drawdown_dates for the specification of the list.
 }
 \description{
 Returns a dataframe containing performance stats on one or multiple
