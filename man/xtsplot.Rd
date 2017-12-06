@@ -4,24 +4,31 @@
 \alias{xtsplot}
 \title{Plot xts time series objects via multiple methods.}
 \usage{
-xtsplot(data, method = c("zoo", "xts", "custom"), type = c("equity_curve",
-  "performance"), legend = "topleft", norm = TRUE, mode = "portfolio",
-  bench = 0, log = "", fname = NULL, pngsize = c(1280, 720),
-  col = "auto", lwd = 1, lty = 1, shaded = NULL, shaded_inv = TRUE,
-  shaded_col = c("green", "red", "orange", "grey", "blue", "yellow", "purple",
-  "brown", "pink"), vline = NA, vlabel = NA, hline = NA, xlab = NA,
-  ylab = NA, cex.legend = 0.7, return_xts = FALSE, ...)
+xtsplot(data, datarange = NA, method = c("zoo", "xts", "custom"),
+  ptype = c("equity_curve", "performance"), legend = "topleft",
+  norm = TRUE, mode = "portfolio", bench = 0, log = "", fname = NULL,
+  pngsize = c(1280, 720), col = "auto", lwd = 1, lty = 1,
+  shaded = NULL, shaded_inv = TRUE, shaded_col = c("green", "red",
+  "orange", "grey", "blue", "yellow", "purple", "brown", "pink"), vline = NA,
+  vlabel = NA, hline = NA, xlab = NA, ylab = NA, cex.legend = 0.7,
+  cex.lab = 1.15, mgp = c(1.8, 0.6, 0), return_xts = FALSE, ...)
 }
 \arguments{
 \item{data}{An xts matrix containing one or multiple columns to plot.}
 
+\item{datarange}{An xts matrix of similar size as data, used only for the purpose
+of setting a plot labeling range that differs from data.  This
+is normally used to scale the y axis to allow easy side-by-side
+comparison of two similar plots.  Default is NA, which means it is
+ignored.}
+
 \item{method}{The plot method to use.  Must be one of "zoo", "xts", or "custom"}
 
-\item{type}{The type of plot to display.  Must be one of "equity_curve" or
+\item{ptype}{The type of plot to display.  Must be one of "equity_curve" or
 "performance". An equity curve plot displays a single plot
 region with all equity curves. A performance plot displays
 3 regions:  an equity curve plot, a 12 month rolling return
-plot and a drawdown plot.}
+plot and a drawdown plot. (NOT IMPLEMENTED)}
 
 \item{legend}{Location of the legend on the plot, or "none" if no legend is
 desired.  Must be one of "none", "bottomright", "bottom",
@@ -52,11 +59,12 @@ with a date-time stamp appended.}
 \item{pngsize}{A length 2 vector containing the size of the png plot file,
 specified in pixels as c(x, y).}
 
-\item{col}{Vector of color names to use when plotting lines. The colors must be part
+\item{col}{Vector of color names to use when plotting lines. The colors should be part
 of the set: c('black', 'blue', 'green', 'red', 'orange', 'purple', 'brown',
 'darkpink', 'grey', 'turquoise', 'mauve', 'lightblue', 'lightgreen', 'pink',
 'lightorange', 'lightpurple', 'yellow').  This is normally used to change
-the order of colors for plots with multiple lines. Automatically recycled.}
+the order of colors for plots with multiple lines. Base R colors can
+also be used if specified.  Automatically recycled.}
 
 \item{lwd}{Vector specifying the line width.  Default is 1. Recycled as needed.}
 
@@ -106,6 +114,11 @@ the plotted timeframe, possibly adjusted by omitting leading NAs.}
 "Prices" or, if data is normalized, then "Norm. Prices".}
 
 \item{cex.legend}{The relative size for the legend and the vlabel.  Default is 0.7.}
+
+\item{cex.lab}{The relative size for the axis labels.  Default is 1.15.}
+
+\item{mgp}{The margin line for the axis title, axis lables and axis line.
+See help for par().}
 
 \item{return_xts}{Logical. When TRUE, the normalized and scaled xts matrix plotted
 is returned.  Default is FALSE.}

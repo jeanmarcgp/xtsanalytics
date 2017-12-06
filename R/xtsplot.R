@@ -39,12 +39,19 @@
 #'   }
 #'
 #' @param data       An xts matrix containing one or multiple columns to plot.
+#'
+#' @param datarange  An xts matrix of similar size as data, used only for the purpose
+#'                   of setting a plot labeling range that differs from data.  This
+#'                   is normally used to scale the y axis to allow easy side-by-side
+#'                   comparison of two similar plots.  Default is NA, which means it is
+#'                   ignored.
+#'
 #' @param method     The plot method to use.  Must be one of "zoo", "xts", or "custom"
-#' @param type       The type of plot to display.  Must be one of "equity_curve" or
+#' @param ptype      The type of plot to display.  Must be one of "equity_curve" or
 #'                   "performance". An equity curve plot displays a single plot
 #'                   region with all equity curves. A performance plot displays
 #'                   3 regions:  an equity curve plot, a 12 month rolling return
-#'                   plot and a drawdown plot.
+#'                   plot and a drawdown plot. (NOT IMPLEMENTED)
 #' @param legend     Location of the legend on the plot, or "none" if no legend is
 #'                   desired.  Must be one of "none", "bottomright", "bottom",
 #'                   "bottomleft", "left", "topleft", "top", "topright", "right"
@@ -69,11 +76,12 @@
 #'
 #' @param pngsize    A length 2 vector containing the size of the png plot file,
 #'                   specified in pixels as c(x, y).
-#' @param col        Vector of color names to use when plotting lines. The colors must be part
+#' @param col        Vector of color names to use when plotting lines. The colors should be part
 #'                   of the set: c('black', 'blue', 'green', 'red', 'orange', 'purple', 'brown',
 #'                   'darkpink', 'grey', 'turquoise', 'mauve', 'lightblue', 'lightgreen', 'pink',
 #'                   'lightorange', 'lightpurple', 'yellow').  This is normally used to change
-#'                   the order of colors for plots with multiple lines. Automatically recycled.
+#'                   the order of colors for plots with multiple lines. Base R colors can
+#'                   also be used if specified.  Automatically recycled.
 #'
 #' @param lwd        Vector specifying the line width.  Default is 1. Recycled as needed.
 #' @param lty        Vector specifying the line type.  Default is "line" or 1.  Recycled. See par()
@@ -121,6 +129,11 @@
 #'
 #' @param cex.legend The relative size for the legend and the vlabel.  Default is 0.7.
 #'
+#' @param cex.lab    The relative size for the axis labels.  Default is 1.15.
+#'
+#' @param mgp        The margin line for the axis title, axis lables and axis line.
+#'                   See help for par().
+#'
 #' @param return_xts Logical. When TRUE, the normalized and scaled xts matrix plotted
 #'                   is returned.  Default is FALSE.
 #'
@@ -131,8 +144,9 @@
 #' @export
 #-----------------------------------------------------------------------------------
 xtsplot <- function(data,
+                    datarange   = NA,
                     method      = c('zoo', 'xts', 'custom'),
-                    type        = c("equity_curve", "performance"),
+                    ptype        = c("equity_curve", "performance"),
                     legend      = "topleft",
                     norm        = TRUE,
                     mode        = "portfolio",
@@ -153,6 +167,8 @@ xtsplot <- function(data,
                     xlab        = NA,
                     ylab        = NA,
                     cex.legend  = 0.7,
+                    cex.lab     = 1.15,
+                    mgp         = c(1.8, 0.6, 0),
                     return_xts  = FALSE,
                      ... ) {
 
@@ -197,6 +213,13 @@ xtsplot <- function(data,
     if(any(as.numeric(data[1,]) == 0))
       stop("xtsplot:  Can't normalize. First data row contains zeroes.")
     coredata(data) <- apply(data, 2, function(x) x / rep(x[1], length(x)))
+
+    if(!is.na(datarange[[1]])) {
+      datarange <- datarange[complete.cases(datarange), ]
+      if(any(as.numeric(datarange[1,]) == 0))
+        stop("xtsplot:  Can't normalize. First datarange row contains zeroes.")
+      coredata(datarange) <- apply(datarange, 2, function(x) x / rep(x[1], length(x)))
+    }
 
     sprint("  All curves normalized on: %s", index(data[1,]))
   }
@@ -289,12 +312,13 @@ xtsplot <- function(data,
 
            if(is.na(xlab)) xlab <- timeframe
 
-
            #sprint("timeframe is: %s", timeframe)
 
-           zoo::plot.zoo(data, plot.type = "single", type="n",
+           # Plot the empty canvas region
+           if(is.na(datarange[[1]])) datarange <- data
+           zoo::plot.zoo(datarange, plot.type = "single", type="n",
                          log = log, xlab = xlab, ylab = ylab, col = col,
-                         lwd = lwd, lty = lty, cex.lab = 1.15, mgp = c(1.8, 0.6, 0), ...)
+                         lwd = lwd, lty = lty, cex.lab = cex.lab, mgp = mgp, ...)
 
            # Plot shaded regions if specified
            if(!is.null(shaded)) draw_shaded_regions(shaded, shaded_col,
@@ -567,7 +591,7 @@ make_colors <- function(n = 0, type = c('lines', 'regions'),
   col2 <- rep(col, ceiling(n / length(col)))[1:n]
 
   # Append the alpha to the palette unless type == "regions"
-  if(type != "regions")
+  if(type[[1]] != "regions")
     col3 <- paste0(col2, alpha)
   else
     col3 <- col2
