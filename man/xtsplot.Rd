@@ -11,7 +11,8 @@ xtsplot(data, datarange = NA, method = c("zoo", "xts", "custom"),
   shaded = NULL, shaded_inv = TRUE, shaded_col = c("green", "red",
   "orange", "grey", "blue", "yellow", "purple", "brown", "pink"), vline = NA,
   vlabel = NA, hline = NA, xlab = NA, ylab = NA, cex.legend = 0.7,
-  cex.lab = 1.15, mgp = c(1.8, 0.6, 0), return_xts = FALSE, ...)
+  cex.lab = 1.15, mgp = c(1.8, 0.6, 0), return_xts = FALSE,
+  tie_recent = NA, ...)
 }
 \arguments{
 \item{data}{An xts matrix containing one or multiple columns to plot.}
@@ -37,7 +38,16 @@ or "center".  Default is "topleft". This argument is passed
 to the plot method.}
 
 \item{norm}{Logical. Flag specifying whether to normalize multiple
-curves to a common starting date and level of one.  Default is TRUE.}
+curves to a common starting date.  When set to FALSE,
+nothing is normalized and rows with all NAs (including leading rows)
+are shown on the time scale (as blank curves).  When set to TRUE,
+then rows with all NAs are removed as a first step.  Then, if
+tie_recent is NA, all rows with some NAs are also removed so that
+all curves can start on the same date.  On the other hand, if
+tie_recent is set to a given column, then all curves starting later than the
+earliest curve are plotted on their starting date (the earliest curve
+is not truncated), and these curves are tied to the benchmark or
+column 1 if no benchmark is specified.}
 
 \item{mode}{Defines the mode used to plot the information.  When mode = "gain",
 the percentage gain is shown starting at 0% (and thefore normalized),
@@ -122,6 +132,13 @@ See help for par().}
 
 \item{return_xts}{Logical. When TRUE, the normalized and scaled xts matrix plotted
 is returned.  Default is FALSE.}
+
+\item{tie_recent}{Default is NA. When set to a column number or name in the data matrix,
+all curves that have a starting date more
+recent than the benchmark will be tied (that is, attached) to the
+equity curve represented by that column on their first trading day.
+This allows easy visualizations of recent performance by direct
+overlap of these curves.}
 
 \item{...}{Additional arguments passed to the plot method.}
 }

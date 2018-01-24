@@ -57,8 +57,19 @@
 #'                   "bottomleft", "left", "topleft", "top", "topright", "right"
 #'                   or "center".  Default is "topleft". This argument is passed
 #'                   to the plot method.
+#'
 #' @param norm       Logical. Flag specifying whether to normalize multiple
-#'                   curves to a common starting date and level of one.  Default is TRUE.
+#'                   curves to a common starting date.  When set to FALSE,
+#'                   nothing is normalized and rows with all NAs (including leading rows)
+#'                   are shown on the time scale (as blank curves).  When set to TRUE,
+#'                   then rows with all NAs are removed as a first step.  Then, if
+#'                   tie_recent is NA, all rows with some NAs are also removed so that
+#'                   all curves can start on the same date.  On the other hand, if
+#'                   tie_recent is set to a given column, then all curves starting later than the
+#'                   earliest curve are plotted on their starting date (the earliest curve
+#'                   is not truncated), and these curves are tied to the benchmark or
+#'                   column 1 if no benchmark is specified.
+#'
 #' @param mode       Defines the mode used to plot the information.  When mode = "gain",
 #'                   the percentage gain is shown starting at 0% (and thefore normalized),
 #'                   but only a linear scale is allowed.  When mode = "portfolio" (the default),
@@ -137,6 +148,13 @@
 #' @param return_xts Logical. When TRUE, the normalized and scaled xts matrix plotted
 #'                   is returned.  Default is FALSE.
 #'
+#' @param tie_recent Default is NA. When set to a column number or name in the data matrix,
+#'                   all curves that have a starting date more
+#'                   recent than the benchmark will be tied (that is, attached) to the
+#'                   equity curve represented by that column on their first trading day.
+#'                   This allows easy visualizations of recent performance by direct
+#'                   overlap of these curves.
+#'
 #' @param ...        Additional arguments passed to the plot method.
 #'
 #'
@@ -170,6 +188,7 @@ xtsplot <- function(data,
                     cex.lab     = 1.15,
                     mgp         = c(1.8, 0.6, 0),
                     return_xts  = FALSE,
+                    tie_recent  = NA,
                      ... ) {
 
   # ################################################
@@ -207,9 +226,11 @@ xtsplot <- function(data,
   #------------------------------------------------------------
   # Normalize the curves unless specified otherwise
   #------------------------------------------------------------
-  if(norm) {
+  if(norm && is.na(tie_recent)) {
 
     data <- data[complete.cases(data), , drop=FALSE]
+
+
     if(any(as.numeric(data[1,]) == 0))
       stop("xtsplot:  Can't normalize. First data row contains zeroes.")
     coredata(data) <- apply(data, 2, function(x) x / rep(x[1], length(x)))
@@ -223,6 +244,60 @@ xtsplot <- function(data,
 
     sprint("  All curves normalized on: %s", index(data[1,]))
   }
+
+  #------------------------------------------------------------
+  # Tie recent curves to an equity curve
+  #------------------------------------------------------------
+  if(!is.na(tie_recent)) {
+
+
+    # #############
+    # library(xtsanalytics)
+    # tie_recent = "VTI"
+    # data  = xts_data[, 1:4]
+    # #############
+
+    # Remove leading rows containing only NAs
+    nonas    <- apply(data, 1, function(x) !all(is.na(x)))
+    data     <- data[nonas, ]
+
+    # Identify starting date for each curve.
+    nc               <- ncol(data)
+    startdate        <- as.Date(rep("1980-01-01", nc))
+    names(startdate) <- colnames(data)
+    for(i in 1:nc)
+      startdate[i] <- first(index(data[!is.na(data[, i]), ]))
+
+    # Truncate leading NAs to set first date as first available data from tie_recent
+    nonas    <- apply(data[, tie_recent], 1, function(x) !all(is.na(x)))
+    data2    <- data[nonas, ]
+
+    # Push startdates out to tie_recent if needed to ensure all startdates >= tie_recent
+    for(i in 1:nc)
+      if(startdate[i] <= startdate[tie_recent])
+        startdate[i] <- startdate[tie_recent]
+
+    # Normalize all equity curves into data2, keep leading NAs
+    coredata(data2) <- apply(data2, 2, function(x) x / rep(first(na.omit(x)), length(x)))
+
+    # Figure out the starting values for each curve from tie_recent
+    startval        <- vector(mode = "numeric", length = nc)
+    names(startval) <- colnames(data2)
+    for(i in 1:nc)
+      startval[i] <- data2[startdate[i], tie_recent]
+
+
+    #----------------------------------------------------------
+    # Multiply each equity curve by their associated startval
+    # to tie their starting points on tie_recent
+    #----------------------------------------------------------
+    for(i in 1:nc)
+      data2[, i] <- data2[, i] * startval[i]
+
+
+    data <- data2
+
+  }   ####### ENDIF tie_recent block  #########
 
   #------------------------------------------------------------
   # Adjust variables based on mode selected
