@@ -27,6 +27,7 @@
 #  .emptyxts            Make an xts matrix with colnames
 #  .loccopy             Find the location of a point on a plot to annotate
 #  .xtsbind             cbinds two or more xts matrices and keeps column names intact
+#  .xtsnormalize        Normalizes an xtsmatrix against its first row.
 #
 #
 ###################################################################################
@@ -530,4 +531,30 @@ xtsbind <- function (x, ...) {
 
   return(results)
 
+}
+
+
+#-----------------------------------------------------------------------------------
+#  FUNCTION xtsnormalize
+#'
+#' Normalizes an xts matrix agaist its first row.
+#'
+#' @param xtsmat    The xts matrix to normalize.
+#'
+#' @param na.rm     Logical.  Should we remove all rows with NAs?
+#'
+#' @return Returns an xts matrix that is normalized against its own
+#'         first row.
+#'
+#' @export
+#----------------------------------------------------------------------------------
+xtsnormalize <- function(xtsmat, na.rm = TRUE) {
+
+
+  if(na.rm) xtsmat <- xtsmat[complete.cases(xtsmat), ]
+  coredata(xtsmat) <- apply(xtsmat, 2, function(x) x / rep(x[1], length(x)))
+
+  xtsmat <- as.xts(xtsmat)
+
+  return(xtsmat)
 }
