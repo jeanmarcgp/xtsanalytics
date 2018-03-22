@@ -2,36 +2,32 @@
 % Please edit documentation in R/rebalance.R
 \name{rebalance}
 \alias{rebalance}
-\title{Periodic portfolio rebalance to a given set of weights (NEED TO TEST)}
+\title{Periodic portfolio rebalance to a given set of weights}
 \usage{
-rebalance(prices, weights, on = "quarters", offset = 0, normalize = TRUE)
+rebalance(prices, weights, on = "months", rebal_offset = 1)
 }
 \arguments{
 \item{prices}{An xts of asset prices from which to build the equity curve
-using rebalancing.}
+using periodic rebalancing.}
 
 \item{weights}{A list or vector of asset symbols with their associated weights.
-This vector must sum up to one.}
+This vector should sum up to one if no leverage is desired.  The list
+or vector must be named, and each name must have a corresponding
+column in the prices xts matrix.}
 
 \item{on}{Period on which to rebalance using function endpoints.  Valid values are:
-{ 'weeks', 'months', 'quarters', 'years' }.  If on is a vector, then
-multiple equity curves are produced corresponding to each value of on.}
+{ 'weeks', 'months', 'quarters', 'years' }.}
 
-\item{offset}{Number of days from which to offset the rebalance.  Default is zero,
-which corresponds to the on period endpoints.  May be a positive or
-negative number.}
-
-\item{normalize}{Logical.  Normalizes the equity curve of each asset price before
-doing a rebalance.}
+\item{rebal_offset}{Number of days from which to offset the rebalance.  Default is zero,
+which corresponds to the on period endpoints.  Can only be zero or
+a positive number (which rebalances later than the endpoint).}
 }
 \value{
 An xts matrix of the portfolio equity curve, rebalanced at the end of the
-        specified trading day by argument on.  If argument on is a vector then there
-        will be length(on) equity curves produced.
+        specified trading day by argument on.  The first column contains the prices
+        equity curve while the second column contains the daily returns of the equity
+        curve.
 }
 \description{
 Periodically rebalances a portfolio to a set of weights according to a weight vector.
-}
-\details{
-NOTE:  This may be buggy!  Test and examine the code first!!!
 }

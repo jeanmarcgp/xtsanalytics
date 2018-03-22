@@ -2,91 +2,129 @@
 #  FUNCTION  rebalance.R
 #  ---------------------
 #
-#' Periodic portfolio rebalance to a given set of weights (NEED TO TEST)
+#' Periodic portfolio rebalance to a given set of weights
 #'
 #' Periodically rebalances a portfolio to a set of weights according to a weight vector.
 #'
-#' NOTE:  This may be buggy!  Test and examine the code first!!!
 #'
 #' @param prices     An xts of asset prices from which to build the equity curve
-#'                   using rebalancing.
+#'                   using periodic rebalancing.
+#'
 #' @param weights    A list or vector of asset symbols with their associated weights.
-#'                   This vector must sum up to one.
+#'                   This vector should sum up to one if no leverage is desired.  The list
+#'                   or vector must be named, and each name must have a corresponding
+#'                   column in the prices xts matrix.
 #'
 #' @param on         Period on which to rebalance using function endpoints.  Valid values are:
-#'                   { 'weeks', 'months', 'quarters', 'years' }.  If on is a vector, then
-#'                   multiple equity curves are produced corresponding to each value of on.
+#'                   { 'weeks', 'months', 'quarters', 'years' }.
 #'
-#' @param offset     Number of days from which to offset the rebalance.  Default is zero,
-#'                   which corresponds to the on period endpoints.  May be a positive or
-#'                   negative number.
-#'
-#' @param normalize  Logical.  Normalizes the equity curve of each asset price before
-#'                   doing a rebalance.
+#' @param rebal_offset Number of days from which to offset the rebalance.  Default is zero,
+#'                     which corresponds to the on period endpoints.  Can only be zero or
+#'                     a positive number (which rebalances later than the endpoint).
 #'
 #'
 #' @return An xts matrix of the portfolio equity curve, rebalanced at the end of the
-#'         specified trading day by argument on.  If argument on is a vector then there
-#'         will be length(on) equity curves produced.
+#'         specified trading day by argument on.  The first column contains the prices
+#'         equity curve while the second column contains the daily returns of the equity
+#'         curve.
 #'
+#'
+#' @export
 #----------------------------------------------------------------------------------------
-rebalance <- function(prices, weights, on = 'quarters', offset = 0, normalize = TRUE) {
+rebalance <- function(prices, weights, on = 'months', rebal_offset = 1) {
 
-  # ############################
-  # prices = xts_data["2008/2012", 1:4]
-  # weights = list(SPY = 0.2, VTI = 0.1, BND = 0.5, VNQ = 0.2)
-  # on = 'days'
+  # # ############################
+  # library(xtsanalytics)
+  # # prices = xts_data["2008/2012", 1:6]
+  # # weights = list( SPY = 0.60, BND = 0.40)
   # on = "months"
-  # on = c('days', 'months', 'quarters')
-  # normalize = TRUE
-  # ###############
+  # rebal_offset = 1
+  #
+  # prices    <- xts_data[, c("SPY", "BND")]
+  # weights   <- list(SPY = 0.60, BND = 0.40)
+  # # ############################
 
   weights <- unlist(weights)
-  N     <- nrow(prices)
-  data  <- na.locf(prices)
-  if(N != nrow(data)) stop("prices XTS has some NAs.  Clean this up first before calling rebalance...")
+  prices  <- prices[, names(weights)]
+  prices  <- na.locf(prices)                   # fill skipped days
+  prices  <- prices[complete.cases(prices), ]  # remove leading NAs
+  rets    <- ROC(prices, type = "discrete")[-1, ]
 
-  rets  <- ROC(data, type = "discrete")
+  if(rebal_offset < 0) stop("Function rebalance:  rebal_offset must be >= 0")
 
-  if(normalize) {
-    data <- data[complete.cases(data), ]
-    coredata(data) <- apply(data, 2, function(x) x / rep(x[1], length(x)))
+  #--------------------------------------------------------------------------
+  # Compute the rebalancing index baseline.
+  #--------------------------------------------------------------------------
+  rebal_i <- endpoints(rets, on = on)[-1]
+  Nr      <- nrow(rets)
+
+  #-------------------------------------------------------------------
+  # Offset dates by adding to rebal_i to get proper rebal_dates
+  # Add one to ensure no lookahead bias (at rebal_offset = 0)
+  #-------------------------------------------------------------------
+  rebal_ioffset  <- rebal_i + rebal_offset
+  rebal_ioffset  <- rebal_ioffset[rebal_ioffset <= (Nr - rebal_offset - 1)]
+
+  rebal_ioffset1 <- rebal_ioffset + 1
+  rebal_ioffset1 <- rebal_ioffset1[rebal_ioffset1 <= Nr]
+
+  #-------------------------------------------------------------------
+  # Add another rebalance at the end if last rebalance is earlier
+  # This simplifies the looping code
+  #-------------------------------------------------------------------
+  if(last(rebal_ioffset1) < Nr) {
+    rebal_ioffset1 <- c(rebal_ioffset1, Nr)
+    rebal_ioffset  <- c(rebal_ioffset,  Nr - 1)
   }
 
-  #--------------------------------------------------------------------------
-  # Generate all equity curves looping through on vector
-  #--------------------------------------------------------------------------
-  ecurves <- NULL
-  for(i in on) {
-    ep <- endpoints(rets, on = i)
-    ep <- ep[which(ep >= 1)]
-    ep_dates <- index(rets[ep, ])
-    Ndates   <- length(ep_dates)
+  rebal_dates    <- index(prices[rebal_ioffset,])
+  rebal_dates1   <- index(prices[rebal_ioffset1, ])
 
-    # Convert weights to a matrix, to use for $allweights
-    weightmat <- t(as.matrix(weights))
+  timeframe <- paste0(first(rebal_dates), "/", last(rebal_dates1))
 
-    weightlist        <- rep(list(list(weights = weights, allweights = weightmat)), Ndates)
-    folio             <- list(R = rets, opt_rebalancing = weightlist)
-    names(folio$opt_rebalancing) <- ep_dates
-    class(folio)      <- "optimize.portfolio.rebalancing"
 
-    sprint("Creating rebalanced portfolio on %s", i)
-    ec           <- stitch_statfolio(folio, N=1)[, 1]
-    colnames(ec) <- paste0("EC_", i)
+  #-----------------------------------------------------------------------------
+  # On each rebal_date and until the next one, build the normalized
+  # equity curves for each asset, apply their portfolio weight during
+  # the timeframe, and sum up the results to get the portfolio equity curve.
+  # Then convert that EC to daily returns to build the returns for that
+  # timeframe.
+  #
+  # .ecrets holds the equity curves normalized at each  rebal_date
+  #-----------------------------------------------------------------------------
+  ecrets       <- emptyxts(cnames = "ec", order.by = index(prices[timeframe, ]))
 
-    print(tail(ec))
-    # rets_daily   <- sweep(rets, 2, weights, '*')
-    # prets_daily  <- as.xts(apply(rets_daily, 1, sum), order.by = index(rets))
-    # prets_daily  <- prets_daily[index(ec), ]
-    # ec_daily     <- cumprod_na(1 + prets_daily)
-    # ec$Daily     <- as.numeric(ec_daily)
+  daily_weights  <- emptyxts(cnames = names(weights), order.by = index(ecrets))
+  daily_weights[1, ] <- weights
+  daily_weights      <- na.locf(daily_weights)
 
-    ecurves <- xtsbind(ecurves, ec)
+  # If rebal_dates is NOT the last date, then need on extra iteration
 
-  } #######  End For loop  #######
+  for(i in 2:length(rebal_dates)) {
+    tf       <- paste0(rebal_dates[i-1], "/", rebal_dates1[i])
+    tf1      <- paste0(rebal_dates1[i-1], "/", rebal_dates1[i])  # skips first day!
+    x        <- xtsnormalize(prices[tf, ])
+    x2       <- as.xts(t(apply(x, 1, function(z) z * daily_weights[rebal_dates[i-1], ])))
+    x2$ec    <- rowSums(x2)
+    partrets <- ROC(x2$ec, type = "discrete")[-1]
+    ecrets[tf1, ] <- partrets
+  }
 
-  #xtsplot(ecurves)
+  #----------------------------------------------------------------------------
+  # Build the equity curve for the entire timeframe from the daily returns
+  #----------------------------------------------------------------------------
+  ec      <- cumprod_na(1 + ecrets)
+  ec$rets <- ecrets
+
+  #xtsplot(ec[, "ec"])
+
+  #--------------------------------------------------------
+  # Return xts for equity curve
+  #--------------------------------------------------------
+  return(ec)
+
+
+
 
 }  ########### END FUNCTION rebalance ###########
 

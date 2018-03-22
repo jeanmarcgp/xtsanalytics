@@ -44,6 +44,12 @@
 xtsoverlay<- function(data, timezero, offsets = c(-20, 100), norm=TRUE) {
 
 
+  ##################
+  #library(xtsanalytics)
+
+
+  ##################
+
   N  <- nrow(data)
   nc <- ncol(data)
   timezero <- as.Date(timezero)
@@ -68,6 +74,10 @@ xtsoverlay<- function(data, timezero, offsets = c(-20, 100), norm=TRUE) {
 
   # Loop over each column
   for(i in 1:nc) {
+
+    # Extract the column of interest
+    datacol  <- data[, i]
+
     # timezero date may fall on weekend, so get the next available date
     t0_actual <- index(data[index(data) >= timezero[i],, drop=FALSE])[1]
     t0_i      <- data[as.Date(t0_actual), i, which.i=TRUE]
@@ -81,28 +91,34 @@ xtsoverlay<- function(data, timezero, offsets = c(-20, 100), norm=TRUE) {
 
     skipzoo <- FALSE
     if(tstart_i < 1) {
-      sprint("WARNING: xtsalign: starting before available data indices.")
+      sprint("WARNING: xtsoverlay: starting before available data indices.")
       skipzoo <- TRUE
     }
 
     if(tend_i   > N) {
-      sprint("WARNING: xtsalign: ending beyond available data indices.")
+      sprint("WARNING: xtsoverlay: ending beyond available data indices.")
       skipzoo <- TRUE
+
+      # End that column at the latest point.  Will fill with NAs later
+      #tend_save <- tend_i
+      #tend_i    <- N
     }
 
     if(!skipzoo) {
-      zoocol  <- zoo(as.numeric(data[tstart_i:tend_i, i]), order.by = timeframe)
+      zoocol  <- zoo(as.numeric(datacol[tstart_i:tend_i, 1]), order.by = timeframe)
+
 
       if(is.null(zoo_ret)) zoo_ret <- zoocol else
         zoo_ret <- zoo::cbind.zoo(zoo_ret, zoocol)
+
+      # Name the columns: colnames with timezero stamp
+      colnames(zoo_ret) <- paste0(colnames(data), "_", timezero)
+
     }
 
+  }  #####  END FOR LOOP  ####
 
 
-  }
-
-  # Name the columns: colnames with timezero stamp
-  colnames(zoo_ret) <- paste0(colnames(data), "_", timezero)
 
   # Normalize at timezero if specified
   offset0 <- -offsets[1] + 1
