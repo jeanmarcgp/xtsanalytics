@@ -5,6 +5,7 @@
 #
 
 # Adding a line for a commit to test the github sync...
+# adding another line to test the github commit and sync
 
 #-----------------------------------------
 #  Earnings project to do
