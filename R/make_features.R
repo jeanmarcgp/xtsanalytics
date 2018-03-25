@@ -316,8 +316,9 @@ make_features <- function(prices, features, smooth = NA, on = "days", target = N
 #-------------------------------------------------------------------------------------
 make_transform <- function(data, feature, addname = FALSE) {
 
-  # Parse the feature to see if it must be smoothed post computation
-  # This is specified using parenthesis
+  # Parse the feature to see if it must be processed post computation
+  # This is specified using parenthesis.
+  # The post-processing is either smoothing or lagging the series (positive or negatively)
   smooth_after <- qdapRegex::ex_between(feature, "(", ")")
   corefeat     <- qdapRegex::rm_round(feature)
 
@@ -381,11 +382,11 @@ make_transform <- function(data, feature, addname = FALSE) {
   # Post-process by smoothing the results, if needed
   if(!is.na(smooth_after)) {
     smoothfeat <- stringr::str_extract(smooth_after, "[[:alpha:]]+")
-    smoothnum  <- as.numeric(stringr::str_extract(smooth_after, "[[:digit:]]+"))
+    smoothnum  <- as.numeric(stringr::str_extract(smooth_after, "-?[[:digit:]]+"))
     x2[] <- switch(smoothfeat,
                    sma = apply(x, 2, TTR::SMA, n = smoothnum),
                    ema = apply(x, 2, TTR::EMA, n = smoothnum),
-                   lag = apply(x, 2, quantmod::Lag, k = smoothnum),
+                   lag = timeSeries::lag(x, k = smoothnum),
                    stop("make_transform:  invalid smoothing feature name provided.")
                    )
   }
