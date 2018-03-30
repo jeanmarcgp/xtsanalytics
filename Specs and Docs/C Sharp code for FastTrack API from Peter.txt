@@ -1,0 +1,99 @@
+
+I am using their .dll.  Not only is it faster than the approach you are using but there is more precision.  There are about twenty items available but I am using only accessing dividend adjusted prices and market dates.  The documentation, what there is of it, is under the developer tab.  My C# implementation when I want a .csv file follows.
+
+P
+
+  public void getFastTrackPrices()
+         {
+             string[] dataAndTimersTickers = { "AGG", "BIL", "BWX", "DBC", "DODIX", "EFA", "FRESX", "FSLXX", "GLD", "GD-PM", "GMCDX", "HAINX", "LSBDX", "NAESX", "NSNHQ", "NSNLQ", "PTTRX",
+                                                 "QQQ", "RUM-H", "RUM-J", "RWO", "RWR", "VBMFX", "VDIGX", "VEIEX", "VEURX", "VFINX", "VFITX", "VFSTX", "VGSIX", "VGTSX", "VIPSX", "VPACX", "VTI",
+                                                 "VTSMX", "VUSTX", "VWELX", "VWINX", "SP-CP" };
+             //string[] dataAndTimersTickers = { "BIL", "MSFT", "SPY", "IEF", "FGOVX", "QQQ", "TQQQ", "ADSK", "CSX", "MU",
+             //                                    "NVDA", "LRCX", "TSLA", "GD-PM", "GD-AM", "SP-CP" };
+             int lastRow;
+             int maxMarketDays = 8000;
+
+             DateTime[] marketDates = new DateTime[maxMarketDays]; //array of market dates
+             string outRow = "";
+             string outRow1 = "";
+             string FTDate = "";
+             double[,] prices = new double[maxMarketDays, 150];
+             string[,] priceToFile = new string[maxMarketDays, 150];
+             float[] P = new float[maxMarketDays];
+             int[] firstDataDate = new int[150];  //first market date (days from 9/1/1988) for valid price data
+
+             FTShell3.clsFTshell3 shell = new FTShell3.clsFTshell3(); //be sure to "reference" FTShell3.dll. Note "FTShell3" versus "FTshell3"
+
+             using (StreamWriter pricesFile = new StreamWriter("dataAndTimersPrices.csv", false))
+             {
+                 Console.WriteLine("Accessing FastTrack data base fron
+getFastTrackPrices() ...");
+
+                 lastRow = shell.MaxNumDays;  //number of market days in FastTrack data base
+                 if (lastRow > maxMarketDays - 1)
+                 {
+                     Console.WriteLine(lastRow + " days in FT DB; increase maxMarketDays in getFastTrackPrices");
+                     Console.ReadLine();  //pause execution
+                 }
+
+                 for (int i = 0; i < dataAndTimersTickers.Length; i++)
+                 {
+                     firstDataDate[i] = shell.StartMarketDay(dataAndTimersTickers[i]);  //number oif days to the first valid data from 9/30/1988
+                     outRow += "," + firstDataDate[i];
+                     outRow1 += "," + dataAndTimersTickers[i];
+
+                     P = shell.DivAdjPrices(dataAndTimersTickers[i]);
+//returns the ARRAY of prices over time for tickers[i]
+                     // an exception is thrown if tickers[i] is not in the FastTrack database
+
+                     for (int j = 1; j <= lastRow; j++)    //j = 1 is 9/1/1988
+                     {
+                         prices[j - 1, i] = P[j]; //populate prices array
+                         if (j < firstDataDate[i])
+                             priceToFile[j - 1, i] = "N/A";
+                         else
+                             priceToFile[j - 1, i] = Convert.ToString(P[j]);         //populate prices array
+                     }
+                 }
+
+                 pricesFile.WriteLine(outRow1);  //header row containing ticker symbols
+                 pricesFile.WriteLine(outRow);  //header row containing number of days to first real price data
+
+                 for (int j = 1; j <= lastRow; j++)
+                 {
+                     marketDates[j - 1] = Convert.ToDateTime(shell.MarketDay2Date(j));
+                     outRow = "";
+
+                     for (int i = 0; i < dataAndTimersTickers.Length; i++)
+                         outRow += "," + priceToFile[j - 1, i];
+
+pricesFile.WriteLine(shell.MarketDay2Date(j).ToString("d") + outRow);
+                 }
+                 FTDate = marketDates[lastRow - 1].ToString("d");
+                 //      TimeSpan oneDay = new TimeSpan(1, 0, 0, 0);
+
+                 for (int j = lastRow; j < lastRow + 31; j++) //add thirty market days of continuation data
+                 {
+                     //   outRow = "Run Date:," + date1.ToString("d") + ",,";
+                     outRow = "";
+                     for (int i = 0; i < dataAndTimersTickers.Length; i++)
+                     {
+                         marketDates[j] = marketDates[lastRow - 1];
+                         prices[j, i] = prices[lastRow - 1, i];
+                         outRow += "," + prices[lastRow - 1, i].ToString();
+                     }
+
+pricesFile.WriteLine(marketDates[j].ToString("d") + outRow);
+                 }
+
+                 lastRow = lastRow + 31;
+
+                 outRow = "Prices updated for dataAndTimersPrices.csv. 
+FastTrack date: " + FTDate + ".  Enter to continue";
+                 //file.WriteLine(outRow);
+                 Console.WriteLine(outRow);
+             }
+
+             return;
+         }
+
