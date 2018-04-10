@@ -11,9 +11,10 @@ rebalance(prices, weights, on = "months", rebal_offset = 1)
 using periodic rebalancing.}
 
 \item{weights}{A list or vector of asset symbols with their associated weights.
-This vector should sum up to one if no leverage is desired.  The list
-or vector must be named, and each name must have a corresponding
-column in the prices xts matrix.}
+This vector should normally sum up to one.  However, what matters
+is the relative ratios between each weight, not the absolute values.
+The list or vector must be named, and each name must have a
+corresponding column in the prices xts matrix.}
 
 \item{on}{Period on which to rebalance using function endpoints.  Valid values are:
 { 'weeks', 'months', 'quarters', 'years' }.}
