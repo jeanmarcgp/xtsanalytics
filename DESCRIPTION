@@ -18,15 +18,12 @@ Depends:
     stringr,
     qdapRegex,
     PortfolioAnalytics,
-    randomForest,
     curl,
     readxl,
     gridExtra,
     RColorBrewer,
     doParallel,
     foreach,
-    xgboost,
-    h2o,
     drat
 Imports:
     ggplot2
