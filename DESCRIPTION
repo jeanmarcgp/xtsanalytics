@@ -21,6 +21,7 @@ Depends:
     curl,
     readxl,
     rvest,
+    magrittr,
     gridExtra,
     RColorBrewer,
     doParallel,

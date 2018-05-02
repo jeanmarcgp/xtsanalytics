@@ -34,6 +34,33 @@
 #------------------------------------------------------------------------------------
 mget_symbolData <- function(symbols) {
 
+  # For testing only:
+  #symbols = "SYLD"
+
+  #============================================================
+  # Utility functions to simplify getting data from a field
+  #============================================================
+  getfield <- function(fielddata, fieldname, offset = 1) {
+    ifield <- grep(fieldname, fielddata)
+    #print(ifield)
+
+    if(length(ifield) == 0) {
+      fieldinfo = NA
+    } else {
+      fieldinfo <- fielddata[ifield + offset]
+      fieldinfo <- if(fieldinfo == "N/A") NA else fieldinfo
+    }
+
+    return(fieldinfo)
+
+  }  ######### END getfield function  ########
+
+  remove_commas <- function(fielddata) {
+    gsub(",", "", fielddata)
+  }  #########  END remove_commas function  #######
+
+  #==========================================================
+
   outdf <- NULL
   cat("\nExtracting Yahoo data for symbols: ")
   for(i in symbols) {
@@ -44,26 +71,47 @@ mget_symbolData <- function(symbols) {
     cat(paste0(i, ", "))
     htmlpage <- read_html(paste0("https://finance.yahoo.com/quote/", i))
 
-    #-------------------------------------------
-    # Extract price, avg volume, net assets
-    # and inception date...
-    #-------------------------------------------
+    #--------------------------------------------------------
+    # Extract price, previous close, avg volume,
+    # net assets, inception date...
+    #--------------------------------------------------------
     spandata  <- htmlpage %>%
       html_nodes("div span") %>%
       html_text
 
-    closeprice <- as.numeric(spandata[9])
 
-    iavgvol    <- which(spandata == "Avg. Volume") + 1
-    avgvolume  <- gsub(",", "", spandata[iavgvol])
-    avgvolume  <- if(avgvolume == "N/A") NA else as.numeric(avgvolume)
+    closeprice <- spandata %>%
+      getfield("At close:", offset = -2) %>%
+      as.numeric
 
-    inetassets <- which(spandata == "Net Assets") + 1
-    netassets  <- spandata[inetassets]
+    prevclose  <- spandata %>%
+      getfield("Previous Close", offset = 1) %>%
+      as.numeric
 
-    iinception <- which(spandata == "Inception Date") + 1
-    inception  <- spandata[iinception]
-    inception  <- if(inception == "N/A") NA else as.Date(inception)
+    avgvolume  <- spandata %>%
+      getfield("Avg. Volume", offset = 1) %>%
+      remove_commas %>%
+      as.numeric
+
+    netassets <- spandata %>%
+      getfield("Net Assets", offset = 1)
+
+    inception <- spandata %>%
+      getfield("Inception Date", offset = 1) %>%
+      as.Date
+
+
+    # avgvolume  <- gsub(",", "", getfield(spandata))
+    # iavgvol    <- which(spandata == "Avg. Volume") + 1
+    # avgvolume  <- gsub(",", "", spandata[iavgvol])
+    # avgvolume  <- if(avgvolume == "N/A") NA else as.numeric(avgvolume)
+
+    # inetassets <- which(spandata == "Net Assets") + 1
+    # netassets  <- spandata[inetassets]
+    #
+    # iinception <- which(spandata == "Inception Date") + 1
+    # inception  <- spandata[iinception]
+    # inception  <- if(inception == "N/A") NA else as.Date(inception)
 
     #--------------------------------------
     # Extract symbol name
@@ -76,9 +124,10 @@ mget_symbolData <- function(symbols) {
     # rowbind to data frame
     #--------------------------------------
     dfline <- data.frame(Symbol       = i,
-                         Inception    = inception,
-                         Description  = symbolname,
                          Close        = closeprice,
+                         Prev_Close   = prevclose,
+                         Description  = symbolname,
+                         Inception    = inception,
                          Avg_Volume   = avgvolume,
                          Net_Assets   = netassets
     )
@@ -94,6 +143,8 @@ mget_symbolData <- function(symbols) {
 
 }  #######  END Function mget_symbolData  ##########
 
+# Simple test
+#
 
-
+#mget_symbolData(c("SPY", "QQQ", "TLT", "SYLD", "GLD", "MIND.TO", "HAC.TO", "PCY", "LQD"))
 
