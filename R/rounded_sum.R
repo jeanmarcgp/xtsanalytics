@@ -46,4 +46,12 @@ rounded_sum <- function(x, digits) {
 
 } #########  END rounded_sum  #########
 
+# Test code
+# x = c(0.3333, 0.1111, 0.2222, 0.3334)
+# sum(x)
+# sum(round(x, 2))
+#
+# rounded_sum(x, 2)
+# sum(rounded_sum(x, 2))
+
 
