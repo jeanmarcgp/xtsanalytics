@@ -26,6 +26,7 @@ Depends:
     RColorBrewer,
     doParallel,
     foreach,
+    lubridate,
     drat
 Imports:
     ggplot2

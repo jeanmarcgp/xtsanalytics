@@ -519,7 +519,9 @@ xtscagr <- function(ec) {
 #' @param type      Specifies the type of plot.  If "table"
 #'                  then the equity curves are shown on the top portion
 #'                  and a table of key performance parameters is shown
-#'                  below.  If "curves" then the equity curves
+#'                  below.  If "table2", then a simple version of table is
+#'                  plotted, appropriate for showing shorter periods.
+#'                  If "curves" then the equity curves
 #'                  are shown on the top portion and the drawdown curves
 #'                  are shown on the bottom section.  Default is
 #'                  "table".
@@ -534,12 +536,17 @@ xtscagr <- function(ec) {
 #' @param tabheight The height of the table relative to the height of the plot, for
 #'                  type = "table". Default is 0.6.
 #'
+#' @param labspace  The amount of space between the X and Y labels and the plot.
+#'                  This is useful when scaling the chart for png plots and labels
+#'                  can overlap the plot.  Used by title(), parameter line.
+#'
 #' @param ...       Additional parameters passed through to function xtsplot.
 #'
 #' @export
 #-----------------------------------------------------------------------
 plot_performance <- function(prices, type = "table", main = "Performance Summary",
-                             log = "y", cex = 1, tabheight = 0.6, digits = 2, ...) {
+                             log = "y", cex = 1, tabheight = 0.6, digits = 2,
+                             labspace = 2, ycex = 1, ...) {
 
   #
   # TODO
@@ -554,8 +561,13 @@ plot_performance <- function(prices, type = "table", main = "Performance Summary
 
   # ########  For testing  #######
   # library(xtsanalytics)
-  # prices = xts_data[, 1:4]
-  # type   = "table"
+  # library(lubridate)
+  # prices = xts_data["2012/2013", 1:4]
+  # tabheight = 0.6
+  # cex    = 1
+  # digits = 2
+  # labspace = 2
+  # type   = "table2"
   # main   = "Performance Summary"
   # log    = "y"
   #
@@ -612,6 +624,68 @@ plot_performance <- function(prices, type = "table", main = "Performance Summary
                     col.rownames=c("darkgreen", "red", "darkgreen", "darkgreen", "darkgreen" ),
                     cmar = 1.0, rmar = 0.1, cex = cex_table)
 
+
+         },
+         table2 = {
+           #-------------------------------------------------------------
+           # Plot equity curves at top, SIMPLE performance table below
+           #-------------------------------------------------------------
+           layout(matrix(c(1, 2), nrow = 2, byrow = TRUE),
+                  heights = c(1, tabheight), widths = 1)
+           op <- par(no.readonly = TRUE)
+           #op <- par(mar = c(2.8, 5, 4, 2)) #B,L,T,R
+
+           #op <- par(mar = c(2, 5, 2, 2)) #B,L,T,R
+
+           N  <- ncol(prices)
+           if(N > 8) {
+             N  <- 8
+             sprint("perfplot:  Too many curves to plot. Plotting first 8 columns only.")
+             prices <- prices[, 1:N]
+           }
+
+           #------------------------------------------------------------
+           # Override table size (cex) based on number of columns
+           #------------------------------------------------------------
+           if(N <= 5)      cex2 <- 1    else
+             if(N == 6)    cex2 <- 0.9  else
+               if(N == 7)  cex2 <- 0.8  else
+                 cex2 <- 0.75
+
+
+           #xtsplot(prices, main = main, log = log, ylab = "", xlab = "",
+            #       mode = "growthof100", ...)
+
+           xtsplot(prices, main = main, log = log, ylab = "", xlab = "",
+                   mode = "growthof100")
+           title(ylab = "Growth of $100", line = labspace, cex.lab = ycex)
+
+           #xtsplot(prices, main = main, log = log, hline = 1.0)
+
+           pf <- perfstats(prices, plotout = FALSE, top = 3, digits = digits, percent = TRUE)
+           print(pf)
+
+           thisyear_n  <- year(index(last(prices)))
+           lastyear_n  <- thisyear_n - 1
+           lastyear    <- prices[as.character(lastyear_n), ]
+           tf          <- paste0(index(last(lastyear)), "/", index(last(prices)))
+
+           ytd_gains   <- as.numeric(last(prices[tf, ])) / as.numeric(first(prices[tf, ])) - 1
+           names(ytd_gains) <- colnames(prices)
+
+           print(pf)
+           pf <- rbind(pf, data.frame(t(round(ytd_gains * 100, digits)),
+                                      row.names = "YTD Return (%)"))
+
+           panel1_names <- c("YTD Return (%)",  "Annualized Return (%)",
+                             "Max. Drawdown (%)", "Annualized Std Dev (%)",
+                             "Annualized Sharpe")
+
+           cex_table <- cex * cex2
+           sprint("cex table = %s", cex_table)
+           textplot(pf[panel1_names,, drop = FALSE], wrap.rownames = 23, max.cex = cex_table,
+                    col.rownames=c("darkgreen", "darkgreen", "red", "red", "grey40" ),
+                    cmar = 1.0, rmar = 0.1, mar = c(0,0,0,0))
 
          },
          curves = {
