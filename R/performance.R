@@ -653,11 +653,11 @@ plot_performance <- function(prices, type = "table", main = "Performance Summary
                  cex2 <- 0.75
 
 
-           #xtsplot(prices, main = main, log = log, ylab = "", xlab = "",
-            #       mode = "growthof100", ...)
-
            xtsplot(prices, main = main, log = log, ylab = "", xlab = "",
-                   mode = "growthof100")
+                   mode = "growthof100", ...)
+
+           #xtsplot(prices, main = main, log = log, ylab = "", xlab = "",
+            #       mode = "growthof100")
            title(ylab = "Growth of $100", line = labspace, cex.lab = ycex)
 
            #xtsplot(prices, main = main, log = log, hline = 1.0)
@@ -674,8 +674,10 @@ plot_performance <- function(prices, type = "table", main = "Performance Summary
            names(ytd_gains) <- colnames(prices)
 
            print(pf)
-           pf <- rbind(pf, data.frame(t(round(ytd_gains * 100, digits)),
-                                      row.names = "YTD Return (%)"))
+           ytd_df  <- data.frame(t(round(ytd_gains * 100, digits)),
+                                 row.names = "YTD Return (%)")
+           colnames(ytd_df) <- colnames(pf)
+           pf      <- rbind(pf, ytd_df)
 
            panel1_names <- c("YTD Return (%)",  "Annualized Return (%)",
                              "Max. Drawdown (%)", "Annualized Std Dev (%)",
