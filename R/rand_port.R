@@ -79,10 +79,10 @@ rand_port <- function(data, N = 50, K = 1, weights = "equal",
   # ####################  To Test code  ##############
   # library(xtsanalytics)
   # data      = ROC(xts_data[, c(1,5,6,7)], type = "discrete")[-1, ]
-  # N         = 100
-  # K         = 1
-  # weights   = "average"  #"uniform" #"equal"
-  # return_ec = FALSE
+  # N         = 10
+  # K         = 2
+  # weights   = "uniform" #"equal"
+  # return_ec = TRUE
   # ########################
 
   cnames <- colnames(data)
@@ -143,11 +143,12 @@ rand_port <- function(data, N = 50, K = 1, weights = "equal",
 
     # remove ecavg from the distributions to guarantee no biasing
     ec           <- ec[,     -ncol(ec)]
-    ecrets       <- ecrets[, -ncol(ec)]
+    ecrets       <- ecrets[, -ncol(ecrets)]
 
   }  #######  END Else Statement  #######
 
-
+  sprint("all equity curves")
+  print(tail(ec))
 
   #-------------------------------------------------
   # Calculate statistics to report
@@ -174,7 +175,10 @@ rand_port <- function(data, N = 50, K = 1, weights = "equal",
   names(mdd_vec)  <- vecnames
   names(mar_vec)  <- vecnames
 
-  if(return_ec) retec <- xtsbind(ecavg, ec) else
+  print(tail(ecavg))
+
+  sprint("Before ecavg not found...")
+  if(return_ec) retec <- cbind(ecavg, ec) else
     retec <- ecavg
 
   retlist <- list(ec        = retec,
