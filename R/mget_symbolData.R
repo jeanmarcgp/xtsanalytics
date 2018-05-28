@@ -35,7 +35,11 @@
 mget_symbolData <- function(symbols) {
 
   # For testing only:
-  #symbols = "SYLD"
+  # symbols = "SPY"
+  # symbols = c("SPY", "EWJ", "VWO", "EFA", "VXF", "IEF", "TLT", "LQD", "PCY", "TIP",
+  #             "VNQ", "DBC", "GLD", "UUP", "SHY",
+  #             "QQQ", "USO")
+  # symbols = c(symbols, symbols)
 
   #============================================================
   # Utility functions to simplify getting data from a field
@@ -65,11 +69,31 @@ mget_symbolData <- function(symbols) {
   cat("\nExtracting Yahoo data for symbols: ")
   for(i in symbols) {
 
-    #--------------------------------------
-    # Read yahoo html page
-    #--------------------------------------
+    #----------------------------------------------------------
+    # Read yahoo html page.  Try 5 times on error
+    #----------------------------------------------------------
     cat(paste0(i, ", "))
-    htmlpage <- read_html(paste0("https://finance.yahoo.com/quote/", i))
+
+    ok      <- FALSE
+    counter <- 0
+    while(!ok && counter <= 5) {
+      counter <- counter + 1
+      htmlpage <- tryCatch({read_html(paste0("https://finance.yahoo.com/quote/", i))},
+                           error = function(e) {
+                             Sys.sleep(2)
+                             e
+                             }
+                           )
+
+      if("error" %in% class(htmlpage)) {
+        cat(".")
+      } else {
+        ok <- TRUE
+
+      }
+    }  ######  End while loop   #######
+
+    #htmlpage <- read_html(paste0("https://finance.yahoo.com/quote/", i))
 
     #--------------------------------------------------------
     # Extract price, previous close, avg volume,
@@ -78,7 +102,6 @@ mget_symbolData <- function(symbols) {
     spandata  <- htmlpage %>%
       html_nodes("div span") %>%
       html_text
-
 
     closeprice <- spandata %>%
       getfield("At close:", offset = -2) %>%
