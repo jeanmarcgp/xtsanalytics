@@ -107,6 +107,10 @@ mget_symbolData <- function(symbols) {
       getfield("At close:", offset = -2) %>%
       as.numeric
 
+    currentprice <- spandata %>%
+      getfield("Market open.", offset = -2) %>%
+      as.numeric
+
     prevclose  <- spandata %>%
       getfield("Previous Close", offset = 1) %>%
       as.numeric
@@ -123,19 +127,6 @@ mget_symbolData <- function(symbols) {
       getfield("Inception Date", offset = 1) %>%
       as.Date
 
-
-    # avgvolume  <- gsub(",", "", getfield(spandata))
-    # iavgvol    <- which(spandata == "Avg. Volume") + 1
-    # avgvolume  <- gsub(",", "", spandata[iavgvol])
-    # avgvolume  <- if(avgvolume == "N/A") NA else as.numeric(avgvolume)
-
-    # inetassets <- which(spandata == "Net Assets") + 1
-    # netassets  <- spandata[inetassets]
-    #
-    # iinception <- which(spandata == "Inception Date") + 1
-    # inception  <- spandata[iinception]
-    # inception  <- if(inception == "N/A") NA else as.Date(inception)
-
     #--------------------------------------
     # Extract symbol name
     #--------------------------------------
@@ -146,13 +137,14 @@ mget_symbolData <- function(symbols) {
     #--------------------------------------
     # rowbind to data frame
     #--------------------------------------
-    dfline <- data.frame(Symbol       = i,
-                         Close        = closeprice,
-                         Prev_Close   = prevclose,
-                         Description  = symbolname,
-                         Inception    = inception,
-                         Avg_Volume   = avgvolume,
-                         Net_Assets   = netassets
+    dfline <- data.frame(Symbol         = i,
+                         Close          = closeprice,
+                         Realtime       = currentprice,
+                         Prev_Close     = prevclose,
+                         Description    = symbolname,
+                         Inception      = inception,
+                         Avg_Volume     = avgvolume,
+                         Net_Assets     = netassets
     )
 
     outdf <- rbind(outdf, dfline)
