@@ -44,11 +44,18 @@
 xtsoverlay<- function(data, timezero, offsets = c(-20, 100), norm=TRUE) {
 
 
-  ##################
-  #library(xtsanalytics)
-
-
-  ##################
+  # ##################
+  # library(xtsanalytics)
+  #
+  # data            = xts_data["2007-01/2007-02", 1]
+  # dates_i     = endpoints(data, on = "weeks")[-1]
+  # dates_dates = index(data[dates_i, ])
+  #
+  # timezero        = dates_dates
+  # offsets         = c(-5, 10)
+  # norm            = TRUE
+  #
+  # ##################
 
   N  <- nrow(data)
   nc <- ncol(data)
@@ -56,6 +63,13 @@ xtsoverlay<- function(data, timezero, offsets = c(-20, 100), norm=TRUE) {
   tzlen    <- length(timezero)
   cnames <- colnames(data)
 
+
+  #--------------------------------------------------------------------------
+  # If we have more timezero dates than data columns provided, then
+  # create a matrix that recycles the data columns such that we end up
+  # with ncol == length(timezero).  Each column will then be aligned
+  # at the respective timezero
+  #--------------------------------------------------------------------------
   if(tzlen > nc) {
     ntimes  <- ceiling(tzlen / nc)
     colnums <- rep(1:nc, ntimes)[1:tzlen]
@@ -72,23 +86,26 @@ xtsoverlay<- function(data, timezero, offsets = c(-20, 100), norm=TRUE) {
 
   zoo_ret <- NULL
 
-  # Loop over each column
+  #--------------------------------------------------------------------------
+  # Loop over each column (representing one period each)
+  #--------------------------------------------------------------------------
   for(i in 1:nc) {
 
-    # Extract the column of interest
-    datacol  <- data[, i]
+    # Extract the column to analyze
+    datacol  <- data[, i, drop = FALSE]
 
     # timezero date may fall on weekend, so get the next available date
     t0_actual <- index(data[index(data) >= timezero[i],, drop=FALSE])[1]
     t0_i      <- data[as.Date(t0_actual), i, which.i=TRUE]
-    #sprint("t0_1 = %s", t0_i)
+
+    # First and last row index in data
     tstart_i  <- t0_i + offsets[1]
     tend_i    <- t0_i + offsets[2]
 
-    #sprint("tstart_i = %s", tstart_i)
-    #sprint("tend_i = %s", tend_i)
-    #sprint("nc = %s", nc)
-
+    #-----------------------------------------------------------------------
+    # skipzoo is used to treat incomplete series (stuff with NAs)
+    # at the beginning or end of the series
+    #-----------------------------------------------------------------------
     skipzoo <- FALSE
     if(tstart_i < 1) {
       sprint("WARNING: xtsoverlay: starting before available data indices.")
@@ -99,34 +116,57 @@ xtsoverlay<- function(data, timezero, offsets = c(-20, 100), norm=TRUE) {
       sprint("WARNING: xtsoverlay: ending beyond available data indices.")
       skipzoo <- TRUE
 
-      # End that column at the latest point.  Will fill with NAs later
-      #tend_save <- tend_i
-      #tend_i    <- N
     }
 
     if(!skipzoo) {
-      zoocol  <- zoo(as.numeric(datacol[tstart_i:tend_i, 1]), order.by = timeframe)
+      zoocol           <- as.matrix(zoo(as.numeric(datacol[tstart_i:tend_i, 1]),
+                                        order.by = timeframe), ncol = 1)
 
+    } else {
+      # Adjust for starting before 1 or ending beyond N
+      zoocol    <- as.matrix(zoo(NA, order.by = timeframe), ncol = 1)
 
-      if(is.null(zoo_ret)) zoo_ret <- zoocol else
-        zoo_ret <- zoo::cbind.zoo(zoo_ret, zoocol)
+      if(tstart_i < 1) {
+        # Keep NA at front end, the rest with datacol data
+        tadjust                 <- 2 - tstart_i
+        Nzoo                    <- length(zoocol)
+        zoocol[tadjust:Nzoo, 1] <- zoo(as.numeric(datacol[1:(Nzoo - tadjust + 1), 1]),
+                                       order.by = timeframe[tadjust:Nzoo])
+      }
 
-      # Name the columns: colnames with timezero stamp
-      colnames(zoo_ret) <- paste0(colnames(data), "_", timezero)
+      if(tend_i > N) {
+        # Keep NAs at back end, the rest with datacol data
+        icount <- N - tstart_i + 1    # number of datapoints to include
 
-    }
+        zoocol[1:icount, 1]  <- zoo(as.numeric(datacol[tstart_i:N, 1]),
+                                    order.by = timeframe[1:icount])
+      }
+
+    }  ###### END else statement  ######
+
+    #----------------------------------------------------------------------
+    # Name the column with proper timezero element
+    #----------------------------------------------------------------------
+    colnames(zoocol) <- paste0(colnames(datacol), "_", timezero[i])
+
+    #----------------------------------------------------------------------
+    # cbind zoocol to zoo_ret
+    #----------------------------------------------------------------------
+    if(is.null(zoo_ret)) zoo_ret <- zoocol else
+      zoo_ret <- cbind(zoo_ret, zoocol)
 
   }  #####  END FOR LOOP  ####
 
 
+  # print(zoo_ret)
 
   # Normalize at timezero if specified
   offset0 <- -offsets[1] + 1
   if(norm) {
-      data <- data[complete.cases(data), , drop=FALSE]
-      coredata(zoo_ret) <- apply(zoo_ret, 2, function(x) x / rep(x[offset0], length(x)))
-
+    zoo_ret[]  <- apply(zoo_ret, 2, function(x) x / rep(x[offset0], length(x)))
   }
+
+  zoo_ret <- as.zoo(zoo_ret)
 
   return(zoo_ret)
 }
