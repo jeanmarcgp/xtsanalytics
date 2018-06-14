@@ -61,6 +61,9 @@ mget_symbols <- function(symbols, from="1999-01-01", OHLC="Ad", src = "yahoo",
   symbols    <- unique(symbols)
   nc         <- length(symbols)
 
+  if(src == "database") sprint("Loading data from local database...") else
+    sprint("Getting data from %s...", src)
+
   dnload_sym <- NULL
   err_sym    <- NULL
   sprint("Downloading symbols: %s\n", stringr::str_c(symbols, collapse = " "))
@@ -70,6 +73,7 @@ mget_symbols <- function(symbols, from="1999-01-01", OHLC="Ad", src = "yahoo",
       # Load the data from the local database
       #------------------------------------------------------
       filename <- paste0(filepath, "/", i, ".csv")
+      cat(paste0(" ", i))
       x <- as.xts(read.zoo(file = filename, #format = "%Y-%m-%d",
                            header = TRUE, drop = FALSE, sep = ","))
       colnames(x) <- paste0(colnames(x), ".Adjusted")
@@ -132,7 +136,7 @@ mget_symbols <- function(symbols, from="1999-01-01", OHLC="Ad", src = "yahoo",
   }
 
 
-  #sprint("\n")
+  sprint("\n")
   sprint("DOWNLOAD SUMMARY:")
   sprint('=================')
   sprint('Symbols successfully downloaded: %s ',
