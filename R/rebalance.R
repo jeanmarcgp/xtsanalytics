@@ -36,12 +36,12 @@ rebalance <- function(prices, weights, on = 'months', rebal_offset = 1) {
 
   # # ############################
   # library(xtsanalytics)
-  # # prices = xts_data["2008/2012", 1:6]
+  # # prices = xts_data["2008/2012-12-16", 1:6]
   # # weights = list( SPY = 0.60, BND = 0.40)
   # on = "months"
   # rebal_offset = 1
   #
-  # prices    <- xts_data[, c("SPY", "BND")]
+  # prices    <- xts_data["2008/2014-12-16", c("SPY", "BND")]
   # weights   <- list(SPY = 0.60, BND = 0.40)
   # # ############################
 
@@ -49,15 +49,14 @@ rebalance <- function(prices, weights, on = 'months', rebal_offset = 1) {
   prices  <- prices[, names(weights)]
   prices  <- na.locf(prices)                   # fill skipped days
   prices  <- prices[complete.cases(prices), ]  # remove leading NAs
-  rets    <- ROC(prices, type = "discrete")[-1, ]
 
   if(rebal_offset < 0) stop("Function rebalance:  rebal_offset must be >= 0")
 
   #--------------------------------------------------------------------------
   # Compute the rebalancing index baseline.
   #--------------------------------------------------------------------------
-  rebal_i <- endpoints(rets, on = on)[-1]
-  Nr      <- nrow(rets)
+  rebal_i <- endpoints(prices, on = on)
+  Nr      <- nrow(prices)
 
   #-------------------------------------------------------------------
   # Offset dates by adding to rebal_i to get proper rebal_dates
@@ -82,7 +81,6 @@ rebalance <- function(prices, weights, on = 'months', rebal_offset = 1) {
   rebal_dates1   <- index(prices[rebal_ioffset1, ])
 
   timeframe <- paste0(first(rebal_dates), "/", last(rebal_dates1))
-
 
   #-----------------------------------------------------------------------------
   # On each rebal_date and until the next one, build the normalized
