@@ -38,12 +38,13 @@
 #'
 #' @export
 #----------------------------------------------------------------------------------------
-jdplot <- function(x, y, target, quantiles = list(top = c(0.95, 1.0), bottom = c(0, 0.05)),
-                   mode = "simple") {
+jdplot <- function(x, y, target, pch = 20, mode = "simple", col = c("grey"),
+                   qtiles = list(top = c(0.95, 1.0), bottom = c(0, 0.05))
+                   ) {
 
   #######  For testing  #############
   library(xtsanalytics)
-  quantiles = list(top = c(0.95, 1.0), bottom = c(0, 0.05))
+  qtiles = list(top = c(0.95, 1.0), bottom = c(0, 0.05))
   mode      = "simple"
   prices    = xts_data[, c("SPY", "BND")]
   features  = make_features(prices, features = c("mom63", "sd63"), by_symbol = TRUE)
@@ -53,13 +54,61 @@ jdplot <- function(x, y, target, quantiles = list(top = c(0.95, 1.0), bottom = c
   target    = lag(features$SPY[, "mom63"], k = -63)
   colnames(target) = "mom63fwd"
 
+  pch       = 20
+  col       = c("grey")
+
   ##################################
 
+  xname <- names(x)
+  yname <- names(y)
+  zname <- names(target)
+
+  mat1  <- as.xts(data.frame(target = target, x = x, y = y))
+  colnames(mat1) <- c("target", "x", "y")
+  mat1  <- mat1[complete.cases(mat1), ]
+  print(tail(mat1))
+
+  # All data regression line
+  regressAll  <- lm(target ~ x + y, data = mat1)
+  rsqAll      <- round(summary(regressAll)$r.squared, 3)
 
 
 
+  #-----------------------------------------------------------
+  # Create the list of quantile subsets - qsub
+  # Add quantile column to select qtile rows
+  #-----------------------------------------------------------
+  nqtiles     <- names(qtiles)
+  qsub        <- vector("list", length(qtiles))
+  names(qsub) <- nqtiles
+  mat1$quantnum <- 0                # 0 = no assigned quantile subset
 
+  for(i in nqtiles) {
+    phigh     <- max(qtiles[[i]])
+    plow      <- min(qtiles[[i]])
+    qsub[[i]] <- subset(mat1, target <= quantile(target, probs = phigh, na.rm = TRUE) &
+                          target >= quantile(target, probs = plow, na.rm = TRUE))
+    qindex    <- index(qsub[[i]])
+    mat1[qindex, "quantnum"] <- which(nqtiles == i)
 
+  }
+
+  #subhi = subset(mat1, target >= quantile(target, probs = 0.95, na.rm = TRUE))
+  #sublo = subset(mat1, target <= quantile(target, probs = 0.05, na.rm = TRUE))
+
+  #---------------------------------------------------------------
+  # Assign
+  #---------------------------------------------------------------
+
+  df1  <- as.data.frame(mat1)
+  df1$quantile <- ifelse(df1$quantnum == 0, "None", nqtiles[df1$quantnum])
+  df1$quantile <-
+
+  plot(df1$x, df1$y, pch = pch, main = "hello",
+       xlab = paste(xname, "Distribution"), ylab = paste(yname, "Distribution"),
+       col = col      )
+
+  #col = rainbow(length(df1$target), start = rainbow[1], end = rainbow[2])[rank(df1$target)],
 
 }  ########  END FUNCTION jdplot  ##########
 
