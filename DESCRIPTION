@@ -27,6 +27,7 @@ Depends:
     doParallel,
     foreach,
     lubridate,
+    scales,
     drat
 Imports:
     ggplot2

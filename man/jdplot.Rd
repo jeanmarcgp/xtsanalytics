@@ -4,18 +4,37 @@
 \alias{jdplot}
 \title{Function to visualize the predictive power of a joint distribution}
 \usage{
-jdplot(x, y, target, mode = "simple", qtiles = list(Top = c(0.95, 1), Bottom
-  = c(0, 0.05)), legendloc = "topleft")
+jdplot(target, x = NULL, y = NULL, mode = "simple", qtiles = list(Top =
+  c(0.95, 1), Bottom = c(0, 0.05)), qstyle = data.frame(qnames = c("Other",
+  "Top", "Bottom"), col = c("grey20", "green", "red"), pch = c(20, 8, 5), alpha
+  = c(0.15, 1, 1)), legendloc = "topleft", mtitle = NULL, ...)
 }
 \arguments{
-\item{x}{The x and y data features.  These are normally 2 columns from an xts matrix.}
+\item{target, }{x, y  These are the 3-D data points to perform the scatter plot.  X and y
+are the scatterplot x and y coordinates respectively, whereas target is
+the third dimension that is expressed as a pch and/or color on the 2D
+scatterplot based on its quantile / cluster.  There are two ways to
+specify this data:  either each of target, x and y are single column
+xts matrices, or a single 3 column xts matrix is provided as target and
+x and y are NULL.}
 
-\item{target}{The target variable, also typically from an xts matrix column.}
-
-\item{mode}{The plotting mode.  Supported modes are 'simple' for a simple scatterplot#                   to highlight the quantile regions using a given pch character and a given#                   color.}
+\item{mode}{The plotting mode.  Supported modes are 'simple' for a simple scatterplot
+to highlight the quantile regions using a given pch character and a given
+                   color.}
 
 \item{qtiles}{A named list containing the quantiles to analyze.  The quantile names can be}
 }
 \description{
-Function to visualize the predictive power of a joint distribution
+This function is used to gain insights into a joint distribution {x, y} and its
+predictive power over the third variable, the target.
+}
+\details{
+The function generally performs a scatterplot of {x, y} and uses color to
+project the target variable onto the 2-D scatterplot.  The projection should at
+least contain one quantile region of the data, thus splitting the data into
+at least two subsets, the quantile region and all other points.
+
+As an additional option, the quantile subsets may also be grouped into
+clusters.  Each such cluster should be given a unique color and/or point character (pch)
+for easy identification.  This is specified in a dataframe in argument qstyle.
 }
