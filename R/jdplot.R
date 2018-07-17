@@ -16,6 +16,9 @@
 #' clusters.  Each such cluster should be given a unique color and/or point character (pch)
 #' for easy identification.  This is specified in a dataframe in argument qstyle.
 #'
+#' A shortcut is provided to get top and bottom quantiles at a given percentage.  The default is
+#' set to Top = 95% and above and Bottom = 5% and below.  These can easily be modified using the
+#' qsize argument.
 #'
 #' @param target, x, y  These are the 3-D data points to perform the scatter plot.  X and y
 #'                      are the scatterplot x and y coordinates respectively, whereas target is
@@ -26,17 +29,32 @@
 #'                      x and y are NULL.
 #'
 #' @param mode      The plotting mode.  Supported modes are 'simple' for a simple scatterplot
-#'                    to highlight the quantile regions using a given pch character and a given
-#'                                       color.
+#'                  to highlight the quantile regions using a given pch character and a given color.
+#'
 #' @param qtiles    A named list containing the quantiles to analyze.  The quantile names can be
-#                   anything meaningful to identify the quantiles.  Each quantile is assigned a
-#                   vector of length 2, containing the bottom and upper limit of the quantile.
-#                   These limits are expressed as a number between  0 and 1.  For example,
-#                   top = c(0.95, 1.0) is the top 95% quantile and above.
-#
+#'                  anything meaningful to identify the quantiles.  Each quantile is assigned a
+#'                  vector of length 2, containing the bottom and upper limit of the quantile.
+#'                  These limits are expressed as a number between  0 and 1.
+#'
+#' @param qsize     If specified, this modifies the qtiles 'Top' and 'Bottom' arguments to
+#'                  the specified percentage.  qsize should be specified as a decimal i.e. 0.10
+#'
+#' @param qstyle    A dataframe used to specify the characteristics of each quantile on
+#'                  the scatterplot.  Column 1, called qname, contains the name of each
+#'                  quantile.  Column 2 (col) is the color for each quantile points.
+#'                  Column 3 (pch) is the plot character.  Column 4 (alpha) is the plot point
+#'                  transparency level.  In aggregate, this provides full ability to customize
+#'                  the jdplot.
+#'
+#' @param legendloc The location of the legend.  See ?legend for details.
+#'
+#' @param mtitle    The main title text.  Normally set to NULL which creates a default title.
+#'
+#' @param ...       Other arguments passed on to the plot function.
+#'
 #' @export
 #----------------------------------------------------------------------------------------
-jdplot <- function(target, x = NULL, y = NULL, mode = "simple",
+jdplot <- function(target, x = NULL, y = NULL, mode = "simple", qsize = NULL,
                    qtiles    = list(Top = c(0.95, 1.0), Bottom = c(0, 0.05)),
                    qstyle    = data.frame(qnames = c("Other", "Top", "Bottom"),
                                           col    = c("grey20", "green", "red"),
@@ -68,12 +86,16 @@ jdplot <- function(target, x = NULL, y = NULL, mode = "simple",
   # ##################################
 
   #--------------------------------------------------------------
-  # Arguments conditioning
+  # Arguments conditioning:  x, y, qtiles and mtitle
   #--------------------------------------------------------------
   if(is.null(x) && is.null(y)) {
     x      <- target[, 2]
     y      <- target[, 3]
     target <- target[, 1]
+  }
+
+  if(!is.null(qsize)) {
+    qtiles    = list(Top = c(1 - qsize, 1.0), Bottom = c(0, qsize))
   }
 
   xname <- names(x)
