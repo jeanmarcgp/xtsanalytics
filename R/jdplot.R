@@ -69,12 +69,12 @@ jdplot <- function(target, x = NULL, y = NULL, mode = "simple", window = NULL, q
   #######  For testing  #############
   library(xtsanalytics)
   library(scales)
-  window    = 252 * 0.5
+  window    = 252 * 0.25
   #window    = NULL
   qtiles    = list(Top = c(0.90, 1.0), Bottom = c(0, 0.10))
   mode      = "simple"
   mtitle    = NULL
-  qsize     = NULL
+  qsize     = 0.2
   legendloc = "topleft"
   qstyle    = data.frame(qnames = c("Other", "Top", "Bottom"),
                          col    = c("grey20", "green", "red"),
@@ -110,8 +110,12 @@ jdplot <- function(target, x = NULL, y = NULL, mode = "simple", window = NULL, q
   yname <- names(y)
   zname <- names(target)
 
-  if(is.null(mtitle)) mtitle <- paste0("Target (", zname, ") vs. Joint ",
-                                       xname, " & ", yname, " Distribution")
+  if(is.null(mtitle)) {
+    mtitle <- paste0("Target (", zname, ") vs. Joint ",
+                     xname, " & ", yname, " Distribution")
+    if(!is.null(window))
+      mtitle <- paste0(mtitle, "\nrolling window = ", window, " days")
+  }
 
   mat1  <- as.xts(data.frame(target = target, x = x, y = y))
   colnames(mat1) <- c("target", "x", "y")
@@ -158,6 +162,7 @@ jdplot <- function(target, x = NULL, y = NULL, mode = "simple", window = NULL, q
       qindex <- index(rmat[rmat[, 1] == 1])
       #print(qindex)
       mat1[qindex, "quantnum"] <- which(nqtiles1 == i)
+
     }
 
   }  #####  END for loop  #######
