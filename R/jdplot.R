@@ -31,6 +31,10 @@
 #' @param mode      The plotting mode.  Supported modes are 'simple' for a simple scatterplot
 #'                  to highlight the quantile regions using a given pch character and a given color.
 #'
+#' @param window    The window width to perform the rollapply to compute the rolling quantile.
+#'                  If left to NULL, then no windowing is performed and the quantiles are computed
+#'                  from the entire data set.
+#'
 #' @param qtiles    A named list containing the quantiles to analyze.  The quantile names can be
 #'                  anything meaningful to identify the quantiles.  Each quantile is assigned a
 #'                  vector of length 2, containing the bottom and upper limit of the quantile.
@@ -54,36 +58,39 @@
 #'
 #' @export
 #----------------------------------------------------------------------------------------
-jdplot <- function(target, x = NULL, y = NULL, mode = "simple", qsize = NULL,
-                   qtiles    = list(Top = c(0.95, 1.0), Bottom = c(0, 0.05)),
+jdplot <- function(target, x = NULL, y = NULL, mode = "simple", window = NULL, qsize = NULL,
+                   qtiles    = list(Top = c(0.90, 1.0), Bottom = c(0, 0.10)),
                    qstyle    = data.frame(qnames = c("Other", "Top", "Bottom"),
                                           col    = c("grey20", "green", "red"),
                                           pch    = c(  20,       8,       5),
                                           alpha  = c( 0.15,      1,       1)),
                    legendloc = "topleft", mtitle = NULL, ... ) {
 
-  # #######  For testing  #############
-  # library(xtsanalytics)
-  # library(scales)
-  # qtiles    = list(Top = c(0.95, 1.0), Bottom = c(0, 0.05))
-  # mode      = "simple"
-  # mtitle    = NULL
-  # legendloc = "topleft"
-  # qstyle    = data.frame(qnames = c("Other", "Top", "Bottom"),
-  #                        col    = c("grey20", "green", "red"),
-  #                        pch    = c(  20,       8,       5),
-  #                        alpha  = c( 0.15,      1,       1))
-  #
-  # prices    = xts_data[, c("SPY", "BND")]
-  # features  = make_features(prices, features = c("mom63", "sd63"), by_symbol = TRUE)
-  # x         = features$SPY$sd63
-  # y         = features$BND$sd63
-  # target    = lag(features$SPY[, "mom63"], k = -63)
-  # colnames(target) = "SPY_mom63fwd"
-  # colnames(x)      = "SPY_sd63"
-  # colnames(y)      = "BND_sd63"
-  #
-  # ##################################
+  #######  For testing  #############
+  library(xtsanalytics)
+  library(scales)
+  window    = 252 * 0.5
+  #window    = NULL
+  qtiles    = list(Top = c(0.90, 1.0), Bottom = c(0, 0.10))
+  mode      = "simple"
+  mtitle    = NULL
+  qsize     = NULL
+  legendloc = "topleft"
+  qstyle    = data.frame(qnames = c("Other", "Top", "Bottom"),
+                         col    = c("grey20", "green", "red"),
+                         pch    = c(  20,       8,       5),
+                         alpha  = c( 0.15,      1,       1))
+
+  prices    = xts_data[, c("SPY", "BND")]
+  features  = make_features(prices, features = c("mom63", "sd63"), by_symbol = TRUE)
+  x         = features$SPY$sd63
+  y         = features$BND$sd63
+  target    = lag(features$SPY[, "mom63"], k = -63)
+  colnames(target) = "SPY_mom63fwd"
+  colnames(x)      = "SPY_sd63"
+  colnames(y)      = "BND_sd63"
+
+  ##################################
 
   #--------------------------------------------------------------
   # Arguments conditioning:  x, y, qtiles and mtitle
@@ -98,6 +105,7 @@ jdplot <- function(target, x = NULL, y = NULL, mode = "simple", qsize = NULL,
     qtiles    = list(Top = c(1 - qsize, 1.0), Bottom = c(0, qsize))
   }
 
+
   xname <- names(x)
   yname <- names(y)
   zname <- names(target)
@@ -108,6 +116,7 @@ jdplot <- function(target, x = NULL, y = NULL, mode = "simple", qsize = NULL,
   mat1  <- as.xts(data.frame(target = target, x = x, y = y))
   colnames(mat1) <- c("target", "x", "y")
   mat1  <- mat1[complete.cases(mat1), ]
+  #mat1  <- mat1["2008/2008-08", ]
 
   # All data regression line
   regressAll  <- lm(target ~ x + y, data = mat1)
@@ -126,26 +135,50 @@ jdplot <- function(target, x = NULL, y = NULL, mode = "simple", qsize = NULL,
   for(i in nqtiles) {
     phigh     <- max(qtiles[[i]])
     plow      <- min(qtiles[[i]])
-    qsub[[i]] <- subset(mat1, target <= quantile(target, probs = phigh, na.rm = TRUE) &
-                          target >= quantile(target, probs = plow, na.rm = TRUE))
-    qindex    <- index(qsub[[i]])
-    mat1[qindex, "quantnum"] <- which(nqtiles1 == i)
 
-  }
+    if(is.null(window)) {
+      #----------------------------------------------------------------
+      # Quantiles on all data
+      #----------------------------------------------------------------
+      qsub[[i]] <- subset(mat1, target <= quantile(target, probs = phigh, na.rm = TRUE) &
+                            target >= quantile(target, probs = plow, na.rm = TRUE))
+      qindex    <- index(qsub[[i]])
+      mat1[qindex, "quantnum"] <- which(nqtiles1 == i)
+    } else {
+      #----------------------------------------------------------------
+      # Rolling quantile from a rolling window
+      #----------------------------------------------------------------
+      rmat <- rollapplyr(mat1[, 1], width = window, FUN = function(x) {
+        sub_i     <- which(x <= quantile(x, probs = phigh, na.rm = TRUE) &
+                             x >= quantile(x, probs = plow, na.rm = TRUE))
+        if(nrow(x) %in% sub_i) quant_i <- 1 else quant_i <- 0
+        return(quant_i)
+      })
+
+      qindex <- index(rmat[rmat[, 1] == 1])
+      #print(qindex)
+      mat1[qindex, "quantnum"] <- which(nqtiles1 == i)
+    }
+
+  }  #####  END for loop  #######
 
   #------------------------------------------------------------------
   # Assign $quantile name to each subset.
   #------------------------------------------------------------------
   df1          <- as.data.frame(mat1)
-  df1$quantile <- unlist(lapply(df1$quantnum, function(x) nqtiles1[x]))
+  #df1$quantile <- unlist(lapply(df1$quantnum, function(x) nqtiles1[x]))
 
+
+  #------------------------------------------------------------------
+  # Compute alpha transparency for each point style and plot
+  #------------------------------------------------------------------
   qstyle$alphacol <- NA
   for(i in 1:nrow(qstyle))
     qstyle$alphacol[i] <- alpha(qstyle$col[i], qstyle$alpha[i])
 
   plot(df1$x, df1$y, pch = qstyle$pch[df1$quantnum], main = mtitle,
        xlab = paste(xname, "Distribution"), ylab = paste(yname, "Distribution"),
-       col = qstyle$alphacol[df1$quantnum], ... )
+       col = qstyle$alphacol[df1$quantnum]) #, ... )
 
   legend(x = legendloc, legend = paste(nqtiles1, "quantile", c("", qtiles)),
          col = qstyle$alphacol, pch = qstyle$pch)
@@ -153,7 +186,4 @@ jdplot <- function(target, x = NULL, y = NULL, mode = "simple", qsize = NULL,
 
 
 }  ########  END FUNCTION jdplot  ##########
-
-
-
 
