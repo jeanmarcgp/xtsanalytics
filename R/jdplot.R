@@ -35,15 +35,29 @@
 #'                  If left to NULL, then no windowing is performed and the quantiles are computed
 #'                  from the entire data set.
 #'
-#' @param qtiles    A named list containing the quantiles to analyze.  The quantile names can be
-#'                  anything meaningful to identify the quantiles.  Each quantile is assigned a
-#'                  vector of length 2, containing the bottom and upper limit of the quantile.
-#'                  These limits are expressed as a number between  0 and 1.
+#' @param qtiles    A named list containing the quantiles to analyze and a cutoff threshold used
+#'                  in rolling window mode.  The cutoff thresholds are applicable only to Top and
+#'                  Bottom quantiles and ignored otherwise. All other quantile names can be
+#'                  anything meaningful to identify the quantiles, except
+#'                  that Top and Bottom are reserved for Top and Bottom quantiles respectively.
+#'                  Each quantile is assigned a vector length of either 2 or 3, where the first
+#'                  two values express the bottom and upper limit of the quantile.
+#'                  These limits are expressed as a number between  0 and 1.  In cases where
+#'                  a third argument is provided (in rolling window mode), it is a percentage
+#'                  value (expressed as a fraction between -1 and +1) above or below which the
+#'                  data vector is either accepted or rejected in the quantile.  For example, if
+#'                  Top is set between 0.75 and 1.0, with a window length of 100, then we would
+#'                  normally expect the top 25 points in that quantile.  By adding the threshold,
+#'                  then only the top 25 points that are also above that threshold are reported.
+#'                  For example, during a bear market lasting the entire window, it's possible
+#'                  that only a few or even no vectors exist in that quantile that also exceed
+#'                  10 percent. So a cutoff threshold of 10pct would reject most (or all)
+#'                  vectors in such a case.
 #'
 #' @param qsize     If specified, this modifies the qtiles 'Top' and 'Bottom' arguments to
 #'                  the specified percentage.  qsize should be specified as a decimal i.e. 0.10
 #'
-#' @param qstyle    A dataframe used to specify the characteristics of each quantile on
+#' @param qstyle    A dataframe used to specify the characteristics of each quantile subset on
 #'                  the scatterplot.  Column 1, called qname, contains the name of each
 #'                  quantile.  Column 2 (col) is the color for each quantile points.
 #'                  Column 3 (pch) is the plot character.  Column 4 (alpha) is the plot point
@@ -59,38 +73,38 @@
 #' @export
 #----------------------------------------------------------------------------------------
 jdplot <- function(target, x = NULL, y = NULL, mode = "simple", window = NULL, qsize = NULL,
-                   qtiles    = list(Top = c(0.90, 1.0), Bottom = c(0, 0.10)),
+                   qtiles    = list(Top = c(0.90, 1.0, 0.01), Bottom = c(0, 0.10, -0.01)),
                    qstyle    = data.frame(qnames = c("Other", "Top", "Bottom"),
                                           col    = c("grey20", "green", "red"),
                                           pch    = c(  20,       8,       5),
                                           alpha  = c( 0.15,      1,       1)),
                    legendloc = "topleft", mtitle = NULL, ... ) {
 
-  #######  For testing  #############
-  library(xtsanalytics)
-  library(scales)
-  window    = 252 * 0.25
-  #window    = NULL
-  qtiles    = list(Top = c(0.90, 1.0), Bottom = c(0, 0.10))
-  mode      = "simple"
-  mtitle    = NULL
-  qsize     = 0.2
-  legendloc = "topleft"
-  qstyle    = data.frame(qnames = c("Other", "Top", "Bottom"),
-                         col    = c("grey20", "green", "red"),
-                         pch    = c(  20,       8,       5),
-                         alpha  = c( 0.15,      1,       1))
-
-  prices    = xts_data[, c("SPY", "BND")]
-  features  = make_features(prices, features = c("mom63", "sd63"), by_symbol = TRUE)
-  x         = features$SPY$sd63
-  y         = features$BND$sd63
-  target    = lag(features$SPY[, "mom63"], k = -63)
-  colnames(target) = "SPY_mom63fwd"
-  colnames(x)      = "SPY_sd63"
-  colnames(y)      = "BND_sd63"
-
-  ##################################
+  # #######  For testing  #############
+  # library(xtsanalytics)
+  # library(scales)
+  # window    = 252 * 0.25
+  # #window    = NULL
+  # qtiles    = list(Top = c(0.90, 1.0, 0.10), Bottom = c(0, 0.10, -0.10))
+  # mode      = "simple"
+  # mtitle    = NULL
+  # qsize     = 0.2
+  # legendloc = "topleft"
+  # qstyle    = data.frame(qnames = c("Other", "Top", "Bottom"),
+  #                        col    = c("grey20", "green", "red"),
+  #                        pch    = c(  20,       8,       5),
+  #                        alpha  = c( 0.15,      1,       1))
+  #
+  # prices    = xts_data[, c("SPY", "BND")]
+  # features  = make_features(prices, features = c("mom63", "sd63"), by_symbol = TRUE)
+  # x         = features$SPY$sd63
+  # y         = features$BND$sd63
+  # target    = lag(features$SPY[, "mom63"], k = -63)
+  # colnames(target) = "SPY_mom63fwd"
+  # colnames(x)      = "SPY_sd63"
+  # colnames(y)      = "BND_sd63"
+  #
+  # ##################################
 
   #--------------------------------------------------------------
   # Arguments conditioning:  x, y, qtiles and mtitle
@@ -102,7 +116,8 @@ jdplot <- function(target, x = NULL, y = NULL, mode = "simple", window = NULL, q
   }
 
   if(!is.null(qsize)) {
-    qtiles    = list(Top = c(1 - qsize, 1.0), Bottom = c(0, qsize))
+    qtiles[["Top"]][1]     <- 1 - qsize
+    qtiles[["Bottom"]][2]  <- qsize
   }
 
 
@@ -137,8 +152,8 @@ jdplot <- function(target, x = NULL, y = NULL, mode = "simple", window = NULL, q
   mat1$quantnum <- 1                # 1 = no assigned quantile subset
 
   for(i in nqtiles) {
-    phigh     <- max(qtiles[[i]])
-    plow      <- min(qtiles[[i]])
+    phigh     <- max(qtiles[[i]][1:2])
+    plow      <- min(qtiles[[i]][1:2])
 
     if(is.null(window)) {
       #----------------------------------------------------------------
@@ -156,11 +171,17 @@ jdplot <- function(target, x = NULL, y = NULL, mode = "simple", window = NULL, q
         sub_i     <- which(x <= quantile(x, probs = phigh, na.rm = TRUE) &
                              x >= quantile(x, probs = plow, na.rm = TRUE))
         if(nrow(x) %in% sub_i) quant_i <- 1 else quant_i <- 0
+        # Test to see if our point (last(x) meets the cutoff threshold
+        # and set quant_i = 0 if it does not.
+        if(i == "Top" && last(x)    < qtiles[[i]][3]) quant_i <- 0
+        if(i == "Bottom" && last(x) > qtiles[[i]][3]) quant_i <- 0
         return(quant_i)
       })
 
+      # qindex are the vectors in i  i.e. Top, Bottom, etc.
       qindex <- index(rmat[rmat[, 1] == 1])
-      #print(qindex)
+
+      # Assign the right quantnum to the qindex vectors
       mat1[qindex, "quantnum"] <- which(nqtiles1 == i)
 
     }

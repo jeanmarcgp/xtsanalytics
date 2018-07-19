@@ -4,10 +4,10 @@
 \alias{jdplot}
 \title{Function to visualize the predictive power of a joint distribution}
 \usage{
-jdplot(target, x = NULL, y = NULL, mode = "simple", qsize = NULL,
-  qtiles = list(Top = c(0.95, 1), Bottom = c(0, 0.05)),
-  qstyle = data.frame(qnames = c("Other", "Top", "Bottom"), col = c("grey20",
-  "green", "red"), pch = c(20, 8, 5), alpha = c(0.15, 1, 1)),
+jdplot(target, x = NULL, y = NULL, mode = "simple", window = NULL,
+  qsize = NULL, qtiles = list(Top = c(0.9, 1, 0.01), Bottom = c(0, 0.1,
+  -0.01)), qstyle = data.frame(qnames = c("Other", "Top", "Bottom"), col =
+  c("grey20", "green", "red"), pch = c(20, 8, 5), alpha = c(0.15, 1, 1)),
   legendloc = "topleft", mtitle = NULL, ...)
 }
 \arguments{
@@ -22,15 +22,33 @@ x and y are NULL.}
 \item{mode}{The plotting mode.  Supported modes are 'simple' for a simple scatterplot
 to highlight the quantile regions using a given pch character and a given color.}
 
+\item{window}{The window width to perform the rollapply to compute the rolling quantile.
+If left to NULL, then no windowing is performed and the quantiles are computed
+from the entire data set.}
+
 \item{qsize}{If specified, this modifies the qtiles 'Top' and 'Bottom' arguments to
 the specified percentage.  qsize should be specified as a decimal i.e. 0.10}
 
-\item{qtiles}{A named list containing the quantiles to analyze.  The quantile names can be
-anything meaningful to identify the quantiles.  Each quantile is assigned a
-vector of length 2, containing the bottom and upper limit of the quantile.
-These limits are expressed as a number between  0 and 1.}
+\item{qtiles}{A named list containing the quantiles to analyze and a cutoff threshold used
+in rolling window mode.  The cutoff thresholds are applicable only to Top and
+Bottom quantiles and ignored otherwise. All other quantile names can be
+anything meaningful to identify the quantiles, except
+that Top and Bottom are reserved for Top and Bottom quantiles respectively.
+Each quantile is assigned a vector length of either 2 or 3, where the first
+two values express the bottom and upper limit of the quantile.
+These limits are expressed as a number between  0 and 1.  In cases where
+a third argument is provided (in rolling window mode), it is a percentage
+value (expressed as a fraction between -1 and +1) above or below which the
+data vector is either accepted or rejected in the quantile.  For example, if
+Top is set between 0.75 and 1.0, with a window length of 100, then we would
+normally expect the top 25 points in that quantile.  By adding the threshold,
+then only the top 25 points that are also above that threshold are reported.
+For example, during a bear market lasting the entire window, it's possible
+that only a few or even no vectors exist in that quantile that also exceed
+10 percent. So a cutoff threshold of 10pct would reject most (or all)
+vectors in such a case.}
 
-\item{qstyle}{A dataframe used to specify the characteristics of each quantile on
+\item{qstyle}{A dataframe used to specify the characteristics of each quantile subset on
 the scatterplot.  Column 1, called qname, contains the name of each
 quantile.  Column 2 (col) is the color for each quantile points.
 Column 3 (pch) is the plot character.  Column 4 (alpha) is the plot point
