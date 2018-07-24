@@ -191,7 +191,10 @@ jdplot <- function(target, x = NULL, y = NULL, mode = "simple", window = NULL, q
   #------------------------------------------------------------------
   # Assign $quantile name to each subset.
   #------------------------------------------------------------------
+  mat1         <- mat1[complete.cases(mat1), ]
+  tf1          <- paste(index(first(mat1)), "/", index(last(mat1)))
   df1          <- as.data.frame(mat1)
+
   #df1$quantile <- unlist(lapply(df1$quantnum, function(x) nqtiles1[x]))
 
 
@@ -204,7 +207,7 @@ jdplot <- function(target, x = NULL, y = NULL, mode = "simple", window = NULL, q
 
   plot(df1$x, df1$y, pch = qstyle$pch[df1$quantnum], main = mtitle,
        xlab = paste(xname, "Distribution"), ylab = paste(yname, "Distribution"),
-       col = qstyle$alphacol[df1$quantnum]) #, ... )
+       col = qstyle$alphacol[df1$quantnum], sub = tf1) #, ... )
 
   legend(x = legendloc, legend = paste(nqtiles1, "quantile", c("", qtiles)),
          col = qstyle$alphacol, pch = qstyle$pch)
