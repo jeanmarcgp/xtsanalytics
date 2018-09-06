@@ -67,9 +67,9 @@ jdplot <- function(target, x = NULL, y = NULL, window = NULL, qsize = NULL,
   # #######  For testing  #############
   # library(xtsanalytics)
   # library(scales)
-  # window    = 252 * 0.25
+  # window    = 252 * 5
   # #window    = NULL
-  # qtiles    = list(Top = c(0.90, 1.0, 0.10), Bottom = c(0, 0.10, -0.10))
+  # qtiles    = list(Top = c(0.90, 1.0, -10.01), Bottom = c(0, 0.10, 10.01))
   # mode      = "simple"
   # mtitle    = NULL
   # qsize     = 0.2
@@ -152,8 +152,8 @@ jdplot <- function(target, x = NULL, y = NULL, window = NULL, qsize = NULL,
         return(quant_i)
       })
 
-      # qindex are the vectors in i  i.e. Top, Bottom, etc.
-      qindex <- index(rmat[rmat[, 1] == 1])
+      # qindex are the vectors in i  i.e. Top, Bottom, etc. in loop
+      qindex <- index(rmat[rmat[, 1] == 1])  # Select the quantile vectors
 
       # Assign the right quantnum to the qindex vectors
       mat1[qindex, "quantnum"] <- which(nqtiles1 == i)
@@ -163,13 +163,15 @@ jdplot <- function(target, x = NULL, y = NULL, window = NULL, qsize = NULL,
   }  #####  END for loop  #######
 
   #------------------------------------------------------------------
-  # Assign $quantile name to each subset.
+  # Subset mat1, assign $quantile name to each subset.
   #------------------------------------------------------------------
+  valid_index  <- index(rmat[!is.na(rmat[, 1])])  # skip the init rollwindow
+  mat1         <- mat1[valid_index, ]
   mat1         <- mat1[complete.cases(mat1), ]
   tf1          <- paste(index(first(mat1)), "/", index(last(mat1)))
   df1          <- as.data.frame(mat1)
 
-  #df1$quantile <- unlist(lapply(df1$quantnum, function(x) nqtiles1[x]))
+  df1$quantile <- unlist(lapply(df1$quantnum, function(x) nqtiles1[x]))
 
 
   #------------------------------------------------------------------
