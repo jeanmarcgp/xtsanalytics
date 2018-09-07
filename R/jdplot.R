@@ -258,13 +258,17 @@ jdplot <- function(target, x = NULL, y = NULL, mode = "scatterplot",
       # if no prices provided, then plot the target in bottom panel
       ######  Does not plot points.  Why?  ######
       xtsplot(mat1[, "target"], hline = 0, norm = FALSE)
-      points(as.numeric(as.Date(topquant)), mat1[topquant, "target"], col = qstyle$alphacol[2])
-      points(as.numeric(as.Date(botquant)), mat1[botquant, "target"], col = qstyle$alphacol[3])
+      points(as.numeric(as.Date(topquant)), mat1[topquant, "target"],
+             col = qstyle$alphacol[2], pch = qstyle$pch[2])
+      points(as.numeric(as.Date(botquant)), mat1[botquant, "target"],
+             col = qstyle$alphacol[3], pch = qstyle$pch[3])
 
     } else {
       xtsplot(prices[as.character(index(mat1)), 1], norm = FALSE)
-      points(as.numeric(as.Date(topquant)), prices[topquant, 1], col = qstyle$alphacol[2])
-      points(as.numeric(as.Date(botquant)), prices[botquant, 1], col = qstyle$alphacol[3])
+      points(as.numeric(as.Date(topquant)), prices[topquant, 1],
+             col = qstyle$alphacol[2], pch = qstyle$pch[2])
+      points(as.numeric(as.Date(botquant)), prices[botquant, 1],
+             col = qstyle$alphacol[3], pch = qstyle$pch[3])
     }
 
     par(mfrow = op$mfrow, mar = op$mar)
