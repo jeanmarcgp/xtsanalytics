@@ -28,9 +28,12 @@
 #'                      xts matrices, or a single 3 column xts matrix is provided as target and
 #'                      x and y are NULL.
 #'
-#' @param mode      The plotting mode.  Supported modes are 'simple' for a simple scatterplot
-#'                  to highlight the quantile regions using a given pch character and a given color.
-#'                  (Not used)
+#' @param mode      The plotting mode.  Supported modes are 'scatterplot' and 'dual'.
+#'                  Mode 'scatterplot' is for a simple scatterplot to highlight the quantile
+#'                  regions using a given pch character and a given color.
+#'                  Mode 'dual' produces a two panel plot, where the top panel is a
+#'                  scatterplot and the bottom panel is an xtsplot of the target
+#'                  variable's price.
 #'
 #' @param window    The window width to perform the rollapply to compute the rolling quantile.
 #'                  If left to NULL, then no windowing is performed and the quantiles are computed
@@ -69,28 +72,33 @@
 #'
 #' @param mtitle    The main title text.  Normally set to NULL which creates a default title.
 #'
+#' @param prices    The price series to plot in the second panel, if mode = "dual".
+#'                  If no price series is given and the dual mode is selected, then
+#'                  the target is used instead of the price series.
+#'
 #' @param ...       Other arguments passed on to the plot function.
 #'
 #' @export
 #----------------------------------------------------------------------------------------
-jdplot <- function(target, x = NULL, y = NULL, mode = "simple", window = NULL, qsize = NULL,
+jdplot <- function(target, x = NULL, y = NULL, mode = "scatterplot",
+                   window = NULL, qsize = NULL,
                    qtiles    = list(Top = c(0.90, 1.0, 0.01), Bottom = c(0, 0.10, -0.01)),
                    qstyle    = data.frame(qnames = c("Other", "Top", "Bottom"),
                                           col    = c("grey20", "green", "red"),
                                           pch    = c(  20,       8,       5),
                                           alpha  = c( 0.15,      1,       1)),
-                   legendloc = "topleft", mtitle = NULL, ... ) {
+                   legendloc = "topleft", mtitle = NULL, prices = NULL, ... ) {
 
 
   # #######  For testing  #############
   # library(xtsanalytics)
-  # library(scales)
   #
   # # Default parameters
   # window    = NULL
   # qsize     = NULL
   # qtiles    = list(Top = c(0.90, 1.0, 0.01), Bottom = c(0, 0.10, -0.01))
   # mtitle    = NULL
+  # mode      = "scatterplot"
   # legendloc = "topleft"
   # qstyle    = data.frame(qnames = c("Other", "Top", "Bottom"),
   #                        col    = c("grey20", "green", "red"),
@@ -113,14 +121,16 @@ jdplot <- function(target, x = NULL, y = NULL, mode = "simple", window = NULL, q
   # window    = 252 * 5
   # qtiles    = list(Top = c(0.90, 1.0, -10.01), Bottom = c(0, 0.10, 10.01))
   # qsize     = 0.2
+  # #prices    = NULL
+  # mode      = "dual"
   #
   # target    = xtsbind(target, x, y)
   # target    = target[complete.cases(target), ]
   # x         = NULL
   # y         = NULL
   #
-  #
-  # #######################################################
+
+  #######################################################
 
   #--------------------------------------------------------------
   # Arguments conditioning:  x, y, qtiles and mtitle
@@ -135,7 +145,6 @@ jdplot <- function(target, x = NULL, y = NULL, mode = "simple", window = NULL, q
     qtiles[["Top"]][1]     <- 1 - qsize
     qtiles[["Bottom"]][2]  <- qsize
   }
-
 
   xname <- names(x)
   yname <- names(y)
@@ -216,18 +225,50 @@ jdplot <- function(target, x = NULL, y = NULL, mode = "simple", window = NULL, q
 
 
   #------------------------------------------------------------------
-  # Compute alpha transparency for each point style and plot
+  # Compute alpha transparency for each point style
   #------------------------------------------------------------------
   qstyle$alphacol <- NA
   for(i in 1:nrow(qstyle))
     qstyle$alphacol[i] <- alpha(qstyle$col[i], qstyle$alpha[i])
 
+  #------------------------------------------------------------------
+  # Build the desired plot
+  #------------------------------------------------------------------
+  if(mode == "dual") {
+    # Create a two panel plot.
+    op <- par()
+    par(mfrow = c(2, 1), mar = c(3,4,4,2))
+  }
+
   plot(df1$x, df1$y, pch = qstyle$pch[df1$quantnum], main = mtitle,
        xlab = paste(xname, "Distribution"), ylab = paste(yname, "Distribution"),
-       col = qstyle$alphacol[df1$quantnum], sub = tf1) #, ... )
+       col = qstyle$alphacol[df1$quantnum], sub = tf1, ... )
 
   legend(x = legendloc, legend = paste(nqtiles1, "quantile", c("", qtiles)),
          col = qstyle$alphacol, pch = qstyle$pch)
+
+  #-----------------------------------------------
+  # Dual mode:  extract top and bottom points
+  #-----------------------------------------------
+  if(mode == "dual") {
+    #  Extract the top and bottom quantile dates
+    topquant <- row.names(df1[df1$quantile == "Top", ])
+    botquant <- row.names(df1[df1$quantile == "Bottom", ])
+    if(is.null(prices)) {
+      # if no prices provided, then plot the target in bottom panel
+      ######  Does not plot points.  Why?  ######
+      xtsplot(mat1[, "target"], hline = 0, norm = FALSE)
+      points(as.numeric(as.Date(topquant)), mat1[topquant, "target"], col = qstyle$alphacol[2])
+      points(as.numeric(as.Date(botquant)), mat1[botquant, "target"], col = qstyle$alphacol[3])
+
+    } else {
+      xtsplot(prices[as.character(index(mat1)), 1], norm = FALSE)
+      points(as.numeric(as.Date(topquant)), prices[topquant, 1], col = qstyle$alphacol[2])
+      points(as.numeric(as.Date(botquant)), prices[botquant, 1], col = qstyle$alphacol[3])
+    }
+
+    par(mfrow = op$mfrow, mar = op$mar)
+  }
 
 
 

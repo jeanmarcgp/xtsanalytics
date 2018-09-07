@@ -4,11 +4,11 @@
 \alias{jdplot}
 \title{Function to visualize the predictive power of a joint distribution}
 \usage{
-jdplot(target, x = NULL, y = NULL, mode = "simple", window = NULL,
+jdplot(target, x = NULL, y = NULL, mode = "scatterplot", window = NULL,
   qsize = NULL, qtiles = list(Top = c(0.9, 1, 0.01), Bottom = c(0, 0.1,
   -0.01)), qstyle = data.frame(qnames = c("Other", "Top", "Bottom"), col =
   c("grey20", "green", "red"), pch = c(20, 8, 5), alpha = c(0.15, 1, 1)),
-  legendloc = "topleft", mtitle = NULL, ...)
+  legendloc = "topleft", mtitle = NULL, prices = NULL, ...)
 }
 \arguments{
 \item{target, }{x, y  These are the 3-D data points to perform the scatter plot.  X and y
@@ -19,9 +19,12 @@ specify this data:  either each of target, x and y are single column
 xts matrices, or a single 3 column xts matrix is provided as target and
 x and y are NULL.}
 
-\item{mode}{The plotting mode.  Supported modes are 'simple' for a simple scatterplot
-to highlight the quantile regions using a given pch character and a given color.
-(Not used)}
+\item{mode}{The plotting mode.  Supported modes are 'scatterplot' and 'dual'.
+Mode 'scatterplot' is for a simple scatterplot to highlight the quantile
+regions using a given pch character and a given color.
+Mode 'dual' produces a two panel plot, where the top panel is a
+scatterplot and the bottom panel is an xtsplot of the target
+variable's price.}
 
 \item{window}{The window width to perform the rollapply to compute the rolling quantile.
 If left to NULL, then no windowing is performed and the quantiles are computed
@@ -59,6 +62,10 @@ the jdplot.}
 \item{legendloc}{The location of the legend.  See ?legend for details.}
 
 \item{mtitle}{The main title text.  Normally set to NULL which creates a default title.}
+
+\item{prices}{The price series to plot in the second panel, if mode = "dual".
+If no price series is given and the dual mode is selected, then
+the target is used instead of the price series.}
 
 \item{...}{Other arguments passed on to the plot function.}
 }
