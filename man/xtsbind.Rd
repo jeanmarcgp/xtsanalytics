@@ -4,12 +4,12 @@
 \alias{xtsbind}
 \title{Binds xts columns from two or more xts matrices.}
 \usage{
-xtsbind(x, ...)
+xtsbind(X_x, ...)
 }
 \arguments{
-\item{x}{First xts matrix to bind.}
-
 \item{...}{Additional xts matrices to bind.}
+
+\item{x}{First xts matrix to bind.}
 }
 \value{
 Returns an xts matrix that cbinds all matrices provided as

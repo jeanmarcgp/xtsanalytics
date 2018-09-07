@@ -30,6 +30,7 @@
 #'
 #' @param mode      The plotting mode.  Supported modes are 'simple' for a simple scatterplot
 #'                  to highlight the quantile regions using a given pch character and a given color.
+#'                  (Not used)
 #'
 #' @param window    The window width to perform the rollapply to compute the rolling quantile.
 #'                  If left to NULL, then no windowing is performed and the quantiles are computed
@@ -80,31 +81,46 @@ jdplot <- function(target, x = NULL, y = NULL, mode = "simple", window = NULL, q
                                           alpha  = c( 0.15,      1,       1)),
                    legendloc = "topleft", mtitle = NULL, ... ) {
 
+
   # #######  For testing  #############
   # library(xtsanalytics)
   # library(scales)
-  # window    = 252 * 0.25
-  # #window    = NULL
-  # qtiles    = list(Top = c(0.90, 1.0, 0.10), Bottom = c(0, 0.10, -0.10))
-  # mode      = "simple"
+  #
+  # # Default parameters
+  # window    = NULL
+  # qsize     = NULL
+  # qtiles    = list(Top = c(0.90, 1.0, 0.01), Bottom = c(0, 0.10, -0.01))
   # mtitle    = NULL
-  # qsize     = 0.2
   # legendloc = "topleft"
   # qstyle    = data.frame(qnames = c("Other", "Top", "Bottom"),
   #                        col    = c("grey20", "green", "red"),
   #                        pch    = c(  20,       8,       5),
   #                        alpha  = c( 0.15,      1,       1))
   #
+  # # Data set
   # prices    = xts_data[, c("SPY", "BND")]
   # features  = make_features(prices, features = c("mom63", "sd63"), by_symbol = TRUE)
   # x         = features$SPY$sd63
   # y         = features$BND$sd63
   # target    = lag(features$SPY[, "mom63"], k = -63)
+  # sprint("head of target:")
+  # print(head(target))
   # colnames(target) = "SPY_mom63fwd"
   # colnames(x)      = "SPY_sd63"
   # colnames(y)      = "BND_sd63"
   #
-  # ##################################
+  # # Override parameters (call)
+  # window    = 252 * 5
+  # qtiles    = list(Top = c(0.90, 1.0, -10.01), Bottom = c(0, 0.10, 10.01))
+  # qsize     = 0.2
+  #
+  # target    = xtsbind(target, x, y)
+  # target    = target[complete.cases(target), ]
+  # x         = NULL
+  # y         = NULL
+  #
+  #
+  # #######################################################
 
   #--------------------------------------------------------------
   # Arguments conditioning:  x, y, qtiles and mtitle
@@ -135,7 +151,6 @@ jdplot <- function(target, x = NULL, y = NULL, mode = "simple", window = NULL, q
   mat1  <- as.xts(data.frame(target = target, x = x, y = y))
   colnames(mat1) <- c("target", "x", "y")
   mat1  <- mat1[complete.cases(mat1), ]
-  #mat1  <- mat1["2008/2008-08", ]
 
   # All data regression line
   regressAll  <- lm(target ~ x + y, data = mat1)
@@ -189,13 +204,15 @@ jdplot <- function(target, x = NULL, y = NULL, mode = "simple", window = NULL, q
   }  #####  END for loop  #######
 
   #------------------------------------------------------------------
-  # Assign $quantile name to each subset.
+  # Subset mat1, assign $quantile name to each subset.
   #------------------------------------------------------------------
+  valid_index  <- index(rmat[!is.na(rmat[, 1])])  # skip the init rollwindow
+  mat1         <- mat1[valid_index, ]
   mat1         <- mat1[complete.cases(mat1), ]
   tf1          <- paste(index(first(mat1)), "/", index(last(mat1)))
   df1          <- as.data.frame(mat1)
 
-  #df1$quantile <- unlist(lapply(df1$quantnum, function(x) nqtiles1[x]))
+  df1$quantile <- unlist(lapply(df1$quantnum, function(x) nqtiles1[x]))
 
 
   #------------------------------------------------------------------
@@ -215,4 +232,31 @@ jdplot <- function(target, x = NULL, y = NULL, mode = "simple", window = NULL, q
 
 
 }  ########  END FUNCTION jdplot  ##########
+
+
+
+#############  TEst function call  #######
+
+# # Data set
+# library(xtsanalytics)
+# prices    = xts_data[, c("SPY", "BND")]
+# features  = make_features(prices, features = c("mom63", "sd63"), by_symbol = TRUE)
+# x         = features$SPY$sd63
+# y         = features$BND$sd63
+# target    = lag(features$SPY[, "mom63"], k = -63)
+# colnames(target) = "SPY_mom63fwd"
+# colnames(x)      = "SPY_sd63"
+# colnames(y)      = "BND_sd63"
+#
+# # Override parameters (call)
+# window    = 252 * 5
+# qtiles    = list(Top = c(0.90, 1.0, -10.01), Bottom = c(0, 0.10, 10.01))
+# qsize     = 0.2
+#
+# target    = xtsbind(target, x, y)
+# target    = target[complete.cases(target), ]
+# x         = NULL
+# y         = NULL
+#
+# jdplot(target = target, qsize = 0.2, window = window, qtiles = qtiles)
 

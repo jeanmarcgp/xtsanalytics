@@ -514,20 +514,26 @@ loccopy <- function(n, digits = 2){
 #'         exceptions as detailed above.
 #' @export
 #----------------------------------------------------------------------------------
-xtsbind <- function (x, ...) {
+xtsbind <- function (X_x, ...) {
  # xts::cbind.xts(x, y, ...)
+  # first argument should be a variable name never used elsewhere
+  # to prevent confusion
 
   # Extract arguments: [-1] to remove the function call (first item)
   myargs <- as.character(as.list(match.call()[-1]))
   #print(str(myargs))
 
-  cnames <- NULL
-  for(i in myargs) {
-    cnames <- c(cnames, colnames(eval(parse(text = i))))
-  }
+  #########
+  # Commenting this out because the colname(eval... causes issues
+  # This may cause a bug elsewhere though
+  #########
+  # cnames <- NULL
+  # for(i in myargs) {
+  #   cnames <- c(cnames, colnames(eval(parse(text = i))))
+  # }
 
-  results <- xts::cbind.xts(x, ...)
-  colnames(results) <- cnames
+  results <- xts::cbind.xts(X_x, ...)
+  #colnames(results) <- cnames
 
   return(results)
 
