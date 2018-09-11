@@ -71,7 +71,7 @@ make_synthetic <- function(prices, noisegain = 0.5, sdwindow = 21, smawindow = 1
   # sdwindow   = 21
   # smawindow  = 10
   # N          = 3
-  # by_symbol  = F
+  # by_symbol  = T
   # #######################
 
 
@@ -95,6 +95,7 @@ make_synthetic <- function(prices, noisegain = 0.5, sdwindow = 21, smawindow = 1
   namat    <- rets
   namat[]  <- NA
   synthlist <- vector("list", N)
+  names(synthlist) <- paste0("S", 1:N)
   for(nseries in 1:N) {
     noise <- namat
 
@@ -111,8 +112,20 @@ make_synthetic <- function(prices, noisegain = 0.5, sdwindow = 21, smawindow = 1
   }
 
   sprint("N = %s", N)
-  if(N == 1) synthlist <- synthlist[[1]] else
+  if(N == 1) synthlist <- synthlist[[1]] else {
+    # # Name all synthesized series as S<x>_<parent>
+    # for(ilist in 1:N) {
+    #   cnames <- do.call(paste0, list(names(synthlist)[ilist], "_", colnames(synthlist[[ilist]])))
+    #   colnames(synthlist[[ilist]]) <- cnames
+    # }
+    #### This works but blows up flip_xtslist because the xts colnames are now different
+
+
     if(by_symbol) synthlist <- flip_xtslist(synthlist)
+
+  }
+
+
 
   return(synthlist)
 
