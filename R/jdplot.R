@@ -237,7 +237,7 @@ jdplot <- function(target, x = NULL, y = NULL, mode = "scatterplot",
   if(mode == "dual") {
     # Create a two panel plot.
     op <- par()
-    par(mfrow = c(2, 1), mar = c(3,4,4,2))
+    par(mfrow = c(2, 1)) #, mar = c(4,4,4,2))
   }
 
   plot(df1$x, df1$y, pch = qstyle$pch[df1$quantnum], main = mtitle,

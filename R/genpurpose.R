@@ -28,6 +28,7 @@
 #  .loccopy             Find the location of a point on a plot to annotate
 #  .xtsbind             cbinds two or more xts matrices and keeps column names intact
 #  .xtsnormalize        Normalizes an xtsmatrix against its first row.
+#  .flip_xtslist        Flips the list elements for the columns of each underlying xts
 #
 #
 ###################################################################################
@@ -563,4 +564,39 @@ xtsnormalize <- function(xtsmat, na.rm = TRUE) {
   xtsmat <- as.xts(xtsmat)
 
   return(xtsmat)
+}
+
+#----------------------------------------------------------------------------------
+#  FUNCTION flip_xtslist
+#'
+#' Flips the elements of a list of xts with the elements of the columns of each
+#' underlying xts.
+#'
+#' This function is used when a list of xts of similar structure is provided, but we
+#' want to flip its organization.  For instance, if a list of xts contains 3 features
+#' for 5 assets and is organized as follows:   A list of the 5 assets, and each element
+#' contains an xts of the 3 features for that asset.
+#'
+#' Invoking flip_xtslist will reorganize this list as follows:  A list of the 3 features,
+#' and each feature will contain an xts of the 5 assets.
+#'
+#' Note that the data is left untouched. Only its organization is affected.
+#'
+#' @export
+#-----------------------------------------------------------------------------------
+flip_xtslist <- function(xtslist) {
+
+  listnames <- names(xtslist)
+  matnames  <- colnames(xtslist[[1]])  # only look at first element
+  xlist     <- list()
+
+  for(i in matnames) {
+    x1        <- lapply(xtslist, function(x) x[, i])
+    x2        <- do.call(cbind, x1)
+    colnames(x2) <- listnames
+    xlist[[i]]   <- x2
+  }
+
+  return(xlist)
+
 }
