@@ -5,7 +5,7 @@
 \title{Get multiple symbols and store in a single xts matrix}
 \usage{
 mget_symbols(symbols, from = "1999-01-01", OHLC = "Ad", src = "yahoo",
-  filepath = "../DATABASE/data", ...)
+  filepath = "../DATABASE/data", locf = TRUE, ...)
 }
 \arguments{
 \item{symbols}{A vector of symbol names to download (character vector).}
@@ -25,6 +25,18 @@ passed to quantmod::getSymbols function.}
 is: "../DATABASE/data". This is used only if src = "database".
 In that case, a file name will automatically be created
 consisting of the symbol string concatenated with ".csv".}
+
+\item{locf}{Last observation carried forward. When TRUE, the resulting
+prices matrix is subjected to function na.locf to carry
+forward the last observation and therefore eliminate any
+NAs in the price matrix.  This is relevant when some prices
+are available at different days than others and NAs are introduced
+within the matrix (beyond the beginning of the time series).
+If these NAs are not eliminated, then computing returns from
+the matrix will produce some NA returns and therefore some
+information will be lost, creating an incomplete equity curve.
+Subjecting the matrix to na.locf addresses this issue.
+Default is TRUE.}
 
 \item{...}{Additional arguments passed to quantmod::getSymbols}
 }

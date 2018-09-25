@@ -35,6 +35,18 @@
 #'                    In that case, a file name will automatically be created
 #'                    consisting of the symbol string concatenated with ".csv".
 #'
+#' @param  locf       Last observation carried forward. When TRUE, the resulting
+#'                    prices matrix is subjected to function na.locf to carry
+#'                    forward the last observation and therefore eliminate any
+#'                    NAs in the price matrix.  This is relevant when some prices
+#'                    are available at different days than others and NAs are introduced
+#'                    within the matrix (beyond the beginning of the time series).
+#'                    If these NAs are not eliminated, then computing returns from
+#'                    the matrix will produce some NA returns and therefore some
+#'                    information will be lost, creating an incomplete equity curve.
+#'                    Subjecting the matrix to na.locf addresses this issue.
+#'                    Default is TRUE.
+#'
 #' @param  ...        Additional arguments passed to quantmod::getSymbols
 #'
 #' @return Returns an xts matrix starting at startdate or later if no symbol
@@ -48,7 +60,7 @@
 #' @export
 #------------------------------------------------------------------------------------
 mget_symbols <- function(symbols, from="1999-01-01", OHLC="Ad", src = "yahoo",
-                         filepath = "../DATABASE/data", ...) {
+                         filepath = "../DATABASE/data", locf = TRUE, ...) {
 
 
   #if(exists("stocks_data", where = sys.frame(which = 0))) sprint("stocks_data exists already") else
@@ -146,6 +158,10 @@ mget_symbols <- function(symbols, from="1999-01-01", OHLC="Ad", src = "yahoo",
   sprint('Symbols NOT downloaded: %s\n', stringr::str_c(err_sym, collapse = " "))
 
 
+  if(locf) {
+    sprint("Applying na.locf to the matrix...")
+    data <- na.locf(data)
+  }
   return(data)
 
 
