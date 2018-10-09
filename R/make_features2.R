@@ -1,5 +1,11 @@
 ####################################################################################
+#
 # FILE make_features2.R
+# ---------------------
+#
+# This is an upgrade to make_features.  Once fully functional, it will replace
+# the original make_features function
+
 #
 #
 #  FUNCTIONS IN THIS FILE
