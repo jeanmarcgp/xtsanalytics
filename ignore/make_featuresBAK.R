@@ -1,13 +1,32 @@
 ####################################################################################
 #
-#  make_features2.R
-#  ----------------
+# FILE make_features2.R
+# ---------------------
 #
-#  1) add help text
-#  2) Define the new syntax for simplicity
+# This is an upgrade to make_features.  Once fully functional, it will replace
+# the original make_features function
+
 #
 #
-#  Use the comma to specify a lag or lead
+#  FUNCTIONS IN THIS FILE
+#  . make features2
+#  . make_transform2
+#  .
+#  NOTE:  tailratiofcn still resides in file make_features.  As I combine and clean
+#  this up, I need to include it here.
+#
+#  NOTE2:  I could probably use the same function names, and simply allow . and _ to
+#  be multiplication and division operators.  This would allow backwards compatibility
+#  while still providing the needed upward compatibility path!
+#
+#  Upgrade from make_features.  Use the natural operators, and fix
+#  xtsbind to ensure column names pass through.
+#  +, -, *, / and semicolon ;  to specify a lead or lag.
+#
+#  The comma is not used since it will be reserved to separate features
+#  within a string of several features, as this works well in excel.
+#
+# ---------------------------------------------------------
 #
 #  TODO:  Format to generate higher moment features, such as returns squared.
 #  That format should also have a way to average the higher moments using
@@ -167,7 +186,7 @@
 #' @export
 #-------------------------------------------------------------------------------------
 make_features2 <- function(prices, features, smooth = NA, on = "days", target = NA,
-                           by_symbol = FALSE) {
+                          by_symbol = FALSE) {
 
 #
 #   #################
@@ -186,7 +205,7 @@ make_features2 <- function(prices, features, smooth = NA, on = "days", target = 
   }
 
   # Feature names using returns instead of prices
-  featname_rets <- c("sd", "kurt", "skew", "rets", "retsq", "emar", "smar", "sdup", "sddn",
+  featname_rets <- c("sd", "kurt", "rets", "retsq", "emar", "smar", "sdup", "sddn",
                      "sdnaup", "sdnadn", "tailratio")
 
   # Parse for separators for compounded features: the dot and underscore
@@ -292,7 +311,7 @@ make_features2 <- function(prices, features, smooth = NA, on = "days", target = 
 }
 #------------------------------------------------------------------------------------
 #
-# FUNCTION  make_transform
+# FUNCTION  make_transform2
 #
 #' Make simple transformations of an xts matrix
 #'
@@ -320,11 +339,10 @@ make_features2 <- function(prices, features, smooth = NA, on = "days", target = 
 #' @seealso make_features
 #' @export
 #-------------------------------------------------------------------------------------
-make_transform <- function(data, feature, addname = FALSE) {
+make_transform2 <- function(data, feature, addname = FALSE) {
 
-  # Parse the feature to see if it must be processed post computation
-  # This is specified using parenthesis.
-  # The post-processing is either smoothing or lagging the series (positive or negatively)
+  # Parse the feature to see if it must be smoothed post computation
+  # This is specified using parenthesis
   smooth_after <- qdapRegex::ex_between(feature, "(", ")")
   corefeat     <- qdapRegex::rm_round(feature)
 
@@ -343,12 +361,9 @@ make_transform <- function(data, feature, addname = FALSE) {
     x[] <- NA
     x[] <- switch(featname,
                   sd     = zoo::rollapplyr(data, width = featnum, FUN = sd),
-                  skew   = zoo::rollapplyr(data, width = featnum,
-                                           FUN = PerformanceAnalytics::skewness),
                   kurt   = {
-                    zoo::rollapplyr(data, width = featnum,
-                                    FUN = PerformanceAnalytics::kurtosis, method = "excess")
-                    #stop("Rewrite the kurtosis function to do multiple columns!")
+                    zoo::rollapplyr(data, width = featnum, FUN = kurtosis, method = "excess")
+                    stop("Rewrite the kurtosis function to do multiple columns!")
                   },
                   sdup   = {
                     fdata   <- data
@@ -391,11 +406,11 @@ make_transform <- function(data, feature, addname = FALSE) {
   # Post-process by smoothing the results, if needed
   if(!is.na(smooth_after)) {
     smoothfeat <- stringr::str_extract(smooth_after, "[[:alpha:]]+")
-    smoothnum  <- as.numeric(stringr::str_extract(smooth_after, "-?[[:digit:]]+"))
+    smoothnum  <- as.numeric(stringr::str_extract(smooth_after, "[[:digit:]]+"))
     x2[] <- switch(smoothfeat,
                    sma = apply(x, 2, TTR::SMA, n = smoothnum),
                    ema = apply(x, 2, TTR::EMA, n = smoothnum),
-                   lag = timeSeries::lag(x, k = smoothnum),
+                   lag = apply(x, 2, quantmod::Lag, k = smoothnum),
                    stop("make_transform:  invalid smoothing feature name provided.")
                    )
   }
@@ -405,40 +420,3 @@ make_transform <- function(data, feature, addname = FALSE) {
 }  ####  END FUNCTION make_transform  ####
 
 
-#-------------------------------------------------------------
-# Simple tail ratio function on a data set.
-#'
-#' Calculate the tail ratio on a set of returns
-#'
-#' @export
-#-------------------------------------------------------------
-tailratiofcn <- function(data, pct = 0.05) {
-  # # ########## FOR DEVEL  ########
-  #  data = ROC(xts_data["2008", 1], type = "discrete")
-  #  data = data[1:126, ]
-  #  pct = 0.05
-  # # #########
-
-  data     <- data[complete.cases(data), ]
-  N        <- nrow(data)
-
-  tail_cnt <- ceiling(pct * N)
- # print(head(data))
- # sprint("N = %s, tail_cnt = %s", N, tail_cnt)
-
-  dmat           <- as.matrix(data)
-  rownames(dmat) <- NULL
-  data_sorted    <- apply(dmat, 2, function(x) x[order(x)])
-  left_tail      <- data_sorted[1:tail_cnt, , drop = FALSE]
-  right_tail     <- data_sorted[(N - tail_cnt + 1):N, , drop = FALSE]
-
-  #print(left_tail)
-  lt_avg         <- apply(left_tail, 2, mean)
-  rt_avg         <- apply(right_tail, 2, mean)
-
-  tail_ratio    <- abs(lt_avg / rt_avg)
-
-  return(tail_ratio)
-
-
-}
