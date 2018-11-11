@@ -1,8 +1,8 @@
 #
 #========================================================================================
 #
-# FUNCTION make_synthetic.R
-# -------------------------
+# make_synthetic.R
+# ----------------
 #
 #' Creates a synthetic time series by adding white Gaussian noise to its returns
 #'

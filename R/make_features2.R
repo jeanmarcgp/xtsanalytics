@@ -6,6 +6,13 @@
 #  1) add help text
 #  2) Define the new syntax for simplicity
 #
+###########
+#  NOTE:
+###########
+# make_transform and tailratiofcn have been deleted from this file to
+# ensure there is no duplication with make_features file.
+#
+#########################################################################
 #
 #  Use the comma to specify a lag or lead
 #
@@ -33,7 +40,7 @@
 # #
 ####################################################################################
 #
-# FUNCTION make_features
+# FUNCTION make_features2
 #
 #' Generates a list of features from a universe of assets
 #'
@@ -290,155 +297,10 @@ make_features2 <- function(prices, features, smooth = NA, on = "days", target = 
   return(retlfn)
 
 }
-#------------------------------------------------------------------------------------
-#
-# FUNCTION  make_transform
-#
-#' Make simple transformations of an xts matrix
-#'
-#' This function takes an xts matrix and applies a simple
-#' feature transformation to it in a columnwise fashion.  For example,
-#' the matrix may be a series of asset prices.  The feature transformation
-#' could be to perform a rolling SMA to it.
-#'
-#' @param data      The xts matrix containing the data to transform. The
-#'                  feature is applied to each column as specified by
-#'                  argument `feature`.
-#'
-#' @param feature   The definition of the feature to apply to the data
-#'                  matrix. See the Details section for `make_features` for
-#'                  the syntax for specifying a simple feature.
-#'
-#' @param addname   Logical. Specifies whether the column name of the
-#'                  xts matrix returned stay as they were provided, or
-#'                  whether the feature name is appended to it.
-#'
-#' @return Returns an xts matrix of identical dimensions as data, with each
-#'         column having the specified feature applied to it. Leading NAs are
-#'         padded as needed when computing the feature.
-#'
-#' @seealso make_features
+
+#########################################
+# Temporary filler for make_transform2
 #' @export
-#-------------------------------------------------------------------------------------
-make_transform <- function(data, feature, addname = FALSE) {
-
-  # Parse the feature to see if it must be processed post computation
-  # This is specified using parenthesis.
-  # The post-processing is either smoothing or lagging the series (positive or negatively)
-  smooth_after <- qdapRegex::ex_between(feature, "(", ")")
-  corefeat     <- qdapRegex::rm_round(feature)
-
-  featname   <- stringr::str_extract(corefeat, "[[:alpha:]]+")
-  featnum    <- as.numeric(stringr::str_extract(corefeat, "[[:digit:]]+"))
-
-  x   <- data
-  #----------------------------------------------------------------------
-  # Make sure there is enough data to compute the feature
-  #----------------------------------------------------------------------
-  if(nrow(data) <= featnum) {
-    # Not enough data, so return a single row of NAs
-    x  <- x[1, ]
-  } else {
-    # There is enough data, so compute the feature
-    x[] <- NA
-    x[] <- switch(featname,
-                  sd     = zoo::rollapplyr(data, width = featnum, FUN = sd),
-                  skew   = zoo::rollapplyr(data, width = featnum,
-                                           FUN = PerformanceAnalytics::skewness),
-                  kurt   = {
-                    zoo::rollapplyr(data, width = featnum,
-                                    FUN = PerformanceAnalytics::kurtosis, method = "excess")
-                    #stop("Rewrite the kurtosis function to do multiple columns!")
-                  },
-                  sdup   = {
-                    fdata   <- data
-                    fdata[] <- apply(fdata, 2, function(x) ifelse(x > 0, x, 0))
-                    x       <- zoo::rollapplyr(fdata, width = featnum, FUN = sd)
-                  },
-                  sdnaup = {
-                    fdata   <- data
-                    fdata[] <- apply(fdata, 2, function(x) ifelse(x > 0, x, NA))
-                    x       <- zoo::rollapplyr(fdata, width = featnum, FUN = sd, na.rm = TRUE)
-                  },
-                  sddn   = {
-                    fdata   <- data
-                    fdata[] <- apply(fdata, 2, function(x) ifelse(x < 0, x, 0))
-                    x       <- zoo::rollapplyr(fdata, width = featnum, FUN = sd)
-                  },
-                  sdnadn = {
-                    fdata   <- data
-                    fdata[] <- apply(fdata, 2, function(x) ifelse(x < 0, x, NA))
-                    x       <- zoo::rollapplyr(fdata, width = featnum, FUN = sd, na.rm = TRUE)
-                  },
-                  mom        = TTR::ROC(data, n = featnum, type = "discrete"),
-                  rets       = apply(data, 2, TTR::SMA, n = featnum),
-                  retsq      = apply(data, 2, TTR::SMA, n = featnum),
-                  sma        = apply(data, 2, TTR::SMA, n = featnum),
-                  smar       = apply(data, 2, TTR::SMA, n = featnum),
-                  ema        = apply(data, 2, TTR::EMA, n = featnum),
-                  emar       = apply(data, 2, TTR::EMA, n = featnum),
-                  date       = as.numeric(as.Date(index(data))),
-                  tailratio  = zoo::rollapplyr(data, width = featnum, FUN = tailratiofcn, pct = 0.05),
-                  stop("make_transform:  invalid feature name provided.")
-    )
-
-  }  ####  END if statement  ####
-
-  # Append the feature name to columns if specified
-  if(addname) colnames(x) <- paste0(colnames(x), "_", feature)
-  x2   <- x
-
-  # Post-process by smoothing the results, if needed
-  if(!is.na(smooth_after)) {
-    smoothfeat <- stringr::str_extract(smooth_after, "[[:alpha:]]+")
-    smoothnum  <- as.numeric(stringr::str_extract(smooth_after, "-?[[:digit:]]+"))
-    x2[] <- switch(smoothfeat,
-                   sma = apply(x, 2, TTR::SMA, n = smoothnum),
-                   ema = apply(x, 2, TTR::EMA, n = smoothnum),
-                   lag = timeSeries::lag(x, k = smoothnum),
-                   stop("make_transform:  invalid smoothing feature name provided.")
-                   )
-  }
-
-  return(x2)
-
-}  ####  END FUNCTION make_transform  ####
-
-
-#-------------------------------------------------------------
-# Simple tail ratio function on a data set.
-#'
-#' Calculate the tail ratio on a set of returns
-#'
-#' @export
-#-------------------------------------------------------------
-tailratiofcn <- function(data, pct = 0.05) {
-  # # ########## FOR DEVEL  ########
-  #  data = ROC(xts_data["2008", 1], type = "discrete")
-  #  data = data[1:126, ]
-  #  pct = 0.05
-  # # #########
-
-  data     <- data[complete.cases(data), ]
-  N        <- nrow(data)
-
-  tail_cnt <- ceiling(pct * N)
- # print(head(data))
- # sprint("N = %s, tail_cnt = %s", N, tail_cnt)
-
-  dmat           <- as.matrix(data)
-  rownames(dmat) <- NULL
-  data_sorted    <- apply(dmat, 2, function(x) x[order(x)])
-  left_tail      <- data_sorted[1:tail_cnt, , drop = FALSE]
-  right_tail     <- data_sorted[(N - tail_cnt + 1):N, , drop = FALSE]
-
-  #print(left_tail)
-  lt_avg         <- apply(left_tail, 2, mean)
-  rt_avg         <- apply(right_tail, 2, mean)
-
-  tail_ratio    <- abs(lt_avg / rt_avg)
-
-  return(tail_ratio)
-
-
+make_transform2 <- function(foo) {
+  sprint("hello")
 }
