@@ -2,6 +2,7 @@
 #  FUNCTION  rebalance.R
 #  ---------------------
 #
+#
 #' Periodic portfolio rebalance to a given set of weights
 #'
 #' Periodically rebalances a portfolio to a set of weights according to a weight vector.
@@ -19,8 +20,8 @@
 #' @param on         Period on which to rebalance using function endpoints.  Valid values are:
 #'                   { 'weeks', 'months', 'quarters', 'years' }.
 #'
-#' @param rebal_offset Number of days from which to offset the rebalance.  Default is zero,
-#'                     which corresponds to the on period endpoints.  Can only be zero or
+#' @param rebal_offset Number of days from which to offset the rebalance.  Default is one,
+#'                     which corresponds to the day after the period endpoints.  Can only be zero or
 #'                     a positive number (which rebalances later than the endpoint).
 #'
 #'
@@ -34,16 +35,17 @@
 #----------------------------------------------------------------------------------------
 rebalance <- function(prices, weights, on = 'months', rebal_offset = 1) {
 
-  # # ############################
+  # ############################
   # library(xtsanalytics)
   # # prices = xts_data["2008/2012-12-16", 1:6]
   # # weights = list( SPY = 0.60, BND = 0.40)
   # on = "months"
+  # on = "years"
   # rebal_offset = 1
   #
   # prices    <- xts_data["2008/2014-12-16", c("SPY", "BND")]
   # weights   <- list(SPY = 0.60, BND = 0.40)
-  # # ############################
+  # ############################
 
   weights <- unlist(weights)
   prices  <- prices[, names(weights)]
