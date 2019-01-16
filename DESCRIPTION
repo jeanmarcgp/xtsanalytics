@@ -16,7 +16,7 @@ Depends:
     zoo,
     fTrading,
     stringr,
-    qdapRegex,
+    qdapRegex, 
     PortfolioAnalytics,
     curl,
     readxl,
