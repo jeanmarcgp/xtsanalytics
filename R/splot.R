@@ -13,6 +13,7 @@
 #'
 #' @param tf    The timeframe to use for the scatterplot
 #'
+#'
 #' @return      This function creates a plot and does not return anything.
 #'
 #' @export
