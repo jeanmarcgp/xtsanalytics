@@ -4,8 +4,8 @@
 \alias{make_bench}
 \title{Create an asset benchmark timer from a standard indicator and asset returns.}
 \usage{
-make_bench(data, type = "Goldencross", retval = "timedec", on = "days",
-  offset = 0, seriestype = "prices", ...)
+make_bench(data, type = "Goldencross", retval = "timedec",
+  on = "days", offset = 0, seriestype = "prices", ...)
 }
 \arguments{
 \item{data}{The xts matrix containing the asset price series in the FIRST column.}

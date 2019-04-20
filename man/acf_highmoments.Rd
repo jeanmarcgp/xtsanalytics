@@ -4,8 +4,8 @@
 \alias{acf_highmoments}
 \title{Plot the higher moment auto-correlations and their cross-correlations}
 \usage{
-acf_highmoments(prices, on = c("days", "weeks", "months"), moments = c(1, 2,
-  3, 4, 5))
+acf_highmoments(prices, on = c("days", "weeks", "months"),
+  moments = c(1, 2, 3, 4, 5))
 }
 \arguments{
 \item{prices}{An xts of prices for the asset under analysis.  Only the

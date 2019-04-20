@@ -5,9 +5,9 @@
 \title{Compute performance statistics on equity curves}
 \usage{
 perfstats(data, on = "days", plotout = TRUE, value = TRUE,
-  percent = TRUE, digits = 2, top = 2, main = "Performance Summary",
-  scaling = "auto", title_size = "auto", ulcerthresh = 0,
-  drawdown_dates = FALSE, ...)
+  percent = TRUE, digits = 2, top = 2,
+  main = "Performance Summary", scaling = "auto",
+  title_size = "auto", ulcerthresh = 0, drawdown_dates = FALSE, ...)
 }
 \arguments{
 \item{data}{An xts matrix of equity curves, each column being one equity curve.}

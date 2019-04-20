@@ -4,7 +4,8 @@
 \alias{backtest_opt}
 \title{Function to backtest a periodically optimized portfolio (empty)}
 \usage{
-backtest_opt(R, portfolio, optimize_method = "random", search_size = 100)
+backtest_opt(R, portfolio, optimize_method = "random",
+  search_size = 100)
 }
 \arguments{
 \item{R}{the returns}

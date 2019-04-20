@@ -4,8 +4,8 @@
 \alias{plot_df}
 \title{Plot a data frame or xts matrix to plotting device}
 \usage{
-plot_df(df, main = " ", footnote = " ", title_size = 2, foot_size = 1,
-  scaling = 1, Nmax = 20)
+plot_df(df, main = " ", footnote = " ", title_size = 2,
+  foot_size = 1, scaling = 1, Nmax = 20)
 }
 \arguments{
 \item{df}{The dataframe or matrix to plot}

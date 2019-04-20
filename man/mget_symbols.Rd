@@ -4,8 +4,8 @@
 \alias{mget_symbols}
 \title{Get multiple symbols and store in a single xts matrix}
 \usage{
-mget_symbols(symbols, from = "1999-01-01", OHLC = "Ad", src = "yahoo",
-  filepath = "../DATABASE/data", locf = TRUE, ...)
+mget_symbols(symbols, from = "1999-01-01", OHLC = "Ad",
+  src = "yahoo", filepath = "../DATABASE/data", locf = TRUE, ...)
 }
 \arguments{
 \item{symbols}{A vector of symbol names to download (character vector).}

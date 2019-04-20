@@ -4,7 +4,8 @@
 \alias{predictor_cor}
 \title{Analyzes correlations between an asset and a predictor (EMPTY)}
 \usage{
-predictor_cor(data, price_col = "prices", timer_col = "GC", plot = TRUE)
+predictor_cor(data, price_col = "prices", timer_col = "GC",
+  plot = TRUE)
 }
 \arguments{
 \item{data}{The xts matrix data containing the equity curve of the asset or

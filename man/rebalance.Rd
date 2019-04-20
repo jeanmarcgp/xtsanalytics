@@ -19,8 +19,8 @@ corresponding column in the prices xts matrix.}
 \item{on}{Period on which to rebalance using function endpoints.  Valid values are:
 { 'weeks', 'months', 'quarters', 'years' }.}
 
-\item{rebal_offset}{Number of days from which to offset the rebalance.  Default is zero,
-which corresponds to the on period endpoints.  Can only be zero or
+\item{rebal_offset}{Number of days from which to offset the rebalance.  Default is one,
+which corresponds to the day after the period endpoints.  Can only be zero or
 a positive number (which rebalances later than the endpoint).}
 }
 \value{

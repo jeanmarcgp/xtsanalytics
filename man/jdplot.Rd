@@ -4,11 +4,12 @@
 \alias{jdplot}
 \title{Function to visualize the predictive power of a joint distribution}
 \usage{
-jdplot(target, x = NULL, y = NULL, mode = "scatterplot", window = NULL,
-  qsize = NULL, qtiles = list(Top = c(0.9, 1, 0.01), Bottom = c(0, 0.1,
-  -0.01)), qstyle = data.frame(qnames = c("Other", "Top", "Bottom"), col =
-  c("grey20", "green", "red"), pch = c(20, 8, 5), alpha = c(0.15, 1, 1)),
-  legendloc = "topleft", mtitle = NULL, prices = NULL, ...)
+jdplot(target, x = NULL, y = NULL, mode = "scatterplot",
+  window = NULL, qsize = NULL, qtiles = list(Top = c(0.9, 1, 0.01),
+  Bottom = c(0, 0.1, -0.01)), qstyle = data.frame(qnames = c("Other",
+  "Top", "Bottom"), col = c("grey20", "green", "red"), pch = c(20, 8, 5),
+  alpha = c(0.15, 1, 1)), legendloc = "topleft", mtitle = NULL,
+  prices = NULL, ...)
 }
 \arguments{
 \item{target, }{x, y  These are the 3-D data points to perform the scatter plot.  X and y

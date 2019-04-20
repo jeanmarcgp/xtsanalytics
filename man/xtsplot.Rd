@@ -6,13 +6,13 @@
 \usage{
 xtsplot(data, datarange = NA, method = c("zoo", "xts", "custom"),
   ptype = c("equity_curve", "performance"), legend = "topleft",
-  norm = TRUE, mode = "portfolio", bench = 0, log = "", fname = NULL,
-  pngsize = c(1280, 720), col = "auto", lwd = 1, lty = 1,
-  shaded = NULL, shaded_inv = TRUE, shaded_col = c("green", "red",
-  "orange", "grey", "blue", "yellow", "purple", "brown", "pink"), vline = NA,
-  vlabel = NA, hline = NA, xlab = NA, ylab = NA, cex.legend = 0.7,
-  cex.lab = 1.15, mgp = c(1.8, 0.6, 0), return_xts = FALSE,
-  tie_recent = NA, ...)
+  norm = TRUE, mode = "portfolio", bench = 0, log = "",
+  fname = NULL, pngsize = c(1280, 720), col = "auto", lwd = 1,
+  lty = 1, shaded = NULL, shaded_inv = TRUE,
+  shaded_col = c("green", "red", "orange", "grey", "blue", "yellow",
+  "purple", "brown", "pink"), vline = NA, vlabel = NA, hline = NA,
+  xlab = NA, ylab = NA, cex.legend = 0.7, cex.lab = 1.15,
+  mgp = c(1.8, 0.6, 0), return_xts = FALSE, tie_recent = NA, ...)
 }
 \arguments{
 \item{data}{An xts matrix containing one or multiple columns to plot.}

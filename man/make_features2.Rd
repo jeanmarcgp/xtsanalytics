@@ -4,8 +4,8 @@
 \alias{make_features2}
 \title{Generates a list of features from a universe of assets}
 \usage{
-make_features2(prices, features, smooth = NA, on = "days", target = NA,
-  by_symbol = FALSE)
+make_features2(prices, features, smooth = NA, on = "days",
+  target = NA, by_symbol = FALSE)
 }
 \arguments{
 \item{prices}{An xts matrix of daily asset prices, where each asset is a column, and

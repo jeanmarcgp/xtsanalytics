@@ -4,7 +4,8 @@
 \alias{rand_port}
 \title{Generates N random portfolios based on an asset universe}
 \usage{
-rand_port(data, N = 50, K = 1, weights = "equal", return_ec = FALSE)
+rand_port(data, N = 50, K = 1, weights = "equal",
+  return_ec = FALSE)
 }
 \arguments{
 \item{data}{An xts matrix of periodic returns (NOT prices).  These

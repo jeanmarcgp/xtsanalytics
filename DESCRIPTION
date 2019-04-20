@@ -1,9 +1,9 @@
 Package: xtsanalytics
 Type: Package
-Title: Portfolio Analysis using Optimization and Machine Learning.
+Title: A library of functions to do advanced analytics of time series data (xts matrices).
 Version: 0.10.05
 Date: 2017-01-19
-Authors@R: person("Patenaude", "Jean-Marc", , "jeanmarc@dimensionalresearch.com", c("aut", "cre"))
+Authors@R: person("Patenaude", "Jean-Marc", , "jeanmarc@laplaceinsights.com", c("aut", "cre"))
 Description: A set of functions to analyze investments, optimize investment portfolios
     and develop predictive models using machine learning lagorithms.
 License: GPL-2
@@ -38,5 +38,5 @@ Suggests:
     Rcpp,
     compiler,
     rmarkdown
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.1
 VignetteBuilder: knitr

@@ -5,9 +5,9 @@
 \title{Generate a bubble plot of asset weights.}
 \usage{
 bubbleweights(x, y, dotweights, dotclass = NA, labelpos = NA,
-  xlab = "Volatility (\%)", ylab = "Momentum (\%)", legendloc = "topleft",
-  cex.dots = 0.8, cex.legend = 0.8, hline = NA,
-  main = "Momentum vs. Volatility Bubble Plot", ...)
+  xlab = "Volatility (\%)", ylab = "Momentum (\%)",
+  legendloc = "topleft", cex.dots = 0.8, cex.legend = 0.8,
+  hline = NA, main = "Momentum vs. Volatility Bubble Plot", ...)
 }
 \arguments{
 \item{x}{A named vector or single row xts containing the X values.  If a
